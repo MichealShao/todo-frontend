@@ -183,8 +183,8 @@ function TodoList() {
     pages: 0
   });
   const [sortOptions, setSortOptions] = useState({
-    sortField: 'createdAt',
-    sortDirection: 'desc'
+    sortField: 'deadline',
+    sortDirection: 'asc'
   });
 
   // Control various modals
@@ -192,11 +192,6 @@ function TodoList() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-
-  // Delete countdown
-  const [deleteCountdown, setDeleteCountdown] = useState(5);
-  // Timer reference for clearing
-  const deleteTimerRef = useRef(null);
 
   // Task ID to delete
   const [deleteTaskId, setDeleteTaskId] = useState(null);
@@ -210,7 +205,8 @@ function TodoList() {
     deadline: "",
     hours: "",
     details: "",
-    status: "Pending"
+    status: "Pending",
+    startTime: ""
   });
   // Currently editing task ID (null means not in edit mode)
   const [editingTaskId, setEditingTaskId] = useState(null);
@@ -305,8 +301,8 @@ function TodoList() {
   // Reset sorting and filtering
   const resetFilters = () => {
     setSortOptions({
-      sortField: 'createdAt',
-      sortDirection: 'desc'
+      sortField: 'deadline',
+      sortDirection: 'asc'
     });
     setSearchQuery('');
     setFilters({
@@ -338,7 +334,8 @@ function TodoList() {
       deadline: "",
       hours: "",
       details: "",
-      status: "Pending"
+      status: "Pending",
+      startTime: ""
     });
     setShowAddModal(true);
   };
@@ -353,6 +350,13 @@ function TodoList() {
       (typeof task.deadline === 'string' ? 
         task.deadline.split('T')[0] : 
         new Date(task.deadline).toISOString().split('T')[0]) : 
+      '';
+      
+    // Format start time if exists
+    const formattedStartTime = task.startTime ? 
+      (typeof task.startTime === 'string' ? 
+        task.startTime.split('T')[0] : 
+        new Date(task.startTime).toISOString().split('T')[0]) : 
       '';
     
     // Ensure status is correctly set
@@ -373,7 +377,8 @@ function TodoList() {
       deadline: formattedDeadline,
       hours: task.hours || '',
       details: task.details || '',
-      status: task.status || 'Pending' // Ensure status value is correctly passed
+      status: task.status || 'Pending', // Ensure status value is correctly passed
+      startTime: formattedStartTime || '' // Include start time
     });
     
     setEditingTaskId(taskId);
@@ -410,24 +415,9 @@ function TodoList() {
     console.log('Preparing to delete task ID:', id);
     setDeleteTaskId(id);
     setShowDeleteModal(true);
-    setDeleteCountdown(5);
-    // Start 5-second countdown
-    clearInterval(deleteTimerRef.current);
-    deleteTimerRef.current = setInterval(() => {
-      setDeleteCountdown((prev) => {
-        if (prev <= 1) {
-          // Countdown ended => auto delete
-          confirmDelete();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   const confirmDelete = async () => {
-    clearInterval(deleteTimerRef.current);
-    
     console.log('Preparing to delete task ID:', deleteTaskId);
     
     try {
@@ -458,7 +448,6 @@ function TodoList() {
   };
 
   const cancelDelete = () => {
-    clearInterval(deleteTimerRef.current);
     setShowDeleteModal(false);
     setDeleteTaskId(null);
   };
@@ -481,20 +470,20 @@ function TodoList() {
     }
     
     // For new tasks, validate deadline is not before current date
-    if (!showEditModal && formData.deadline) {
-      // Use string comparison to avoid timezone and time issues
-      const currentDateStr = new Date().toISOString().split('T')[0];
-      
-      // If deadline is strictly before today, do not allow
-      if (formData.deadline < currentDateStr) {
-        setError('Deadline cannot be before today. Please select today or a future date.');
-        return;
-      }
+    const currentDateStr = new Date().toISOString().split('T')[0];
+    if (formData.deadline < currentDateStr) {
+      setError('Deadline cannot be before today. Please select today or a future date.');
+      return;
+    }
+    
+    // Validate deadline is not before start time
+    if (formData.startTime && formData.deadline && formData.deadline < formData.startTime) {
+      setError('Deadline cannot be earlier than Start Time. Please adjust the dates.');
+      return;
     }
     
     // Check if task is expired
     // Use string comparison to avoid timezone and time issues
-    const currentDateStr = new Date().toISOString().split('T')[0];
     const isExpired = formData.deadline < currentDateStr;
     
     // If expired and status is not "Completed", automatically set to "Expired"
@@ -504,13 +493,27 @@ function TodoList() {
       console.log('Task is expired, automatically setting status to Expired');
     }
     
+    // Handle start time logic based on status
+    let startTime = formData.startTime;
+    if (autoStatus === 'Pending') {
+      // Reset start time for Pending tasks
+      startTime = '';
+    } else if (autoStatus === 'In Progress' && startTime) {
+      // Validate start time is not before current date for In Progress tasks
+      if (startTime < currentDateStr) {
+        setError('Start time cannot be before today for In Progress tasks.');
+        return;
+      }
+    }
+    
     // Ensure numeric fields have correct default values
     const taskData = {
       ...formData,
       priority: formData.priority || 'Medium',
       deadline: formData.deadline || new Date().toISOString().split('T')[0],
       hours: formData.hours ? parseInt(formData.hours, 10) : 1,
-      status: autoStatus || 'Pending'
+      status: autoStatus || 'Pending',
+      startTime: startTime
     };
     
     // Debug: Check prepared data to send
@@ -642,7 +645,8 @@ function TodoList() {
       deadline: "",
       hours: "",
       details: "",
-      status: "Pending"
+      status: "Pending",
+      startTime: ""
     });
   };
 
@@ -789,19 +793,21 @@ function TodoList() {
         if (aIsInactive && !bIsInactive) return 1;  // a goes to the bottom
         if (!aIsInactive && bIsInactive) return -1; // b goes to the bottom
         
-        // If status is the same, sort by the current sort field and direction
-        if (sortOptions.sortField) {
-          const aValue = a[sortOptions.sortField];
-          const bValue = b[sortOptions.sortField];
-          
-          // Handle different types of values
-          if (aValue === bValue) return 0;
-          if (aValue === undefined || aValue === null) return 1;
-          if (bValue === undefined || bValue === null) return -1;
-          
-          // Return comparison result based on sort direction
-          const direction = sortOptions.sortDirection === 'asc' ? 1 : -1;
-          return aValue < bValue ? -1 * direction : 1 * direction;
+        // If both are inactive or both are active, then sort by the current sort field
+        if (aIsInactive === bIsInactive) {
+          if (sortOptions.sortField) {
+            const aValue = a[sortOptions.sortField];
+            const bValue = b[sortOptions.sortField];
+            
+            // Handle different types of values
+            if (aValue === bValue) return 0;
+            if (aValue === undefined || aValue === null) return 1;
+            if (bValue === undefined || bValue === null) return -1;
+            
+            // Return comparison result based on sort direction
+            const direction = sortOptions.sortDirection === 'asc' ? 1 : -1;
+            return aValue < bValue ? -1 * direction : 1 * direction;
+          }
         }
         
         return 0;
@@ -893,10 +899,10 @@ function TodoList() {
             </div>
             <button
               onClick={openAddModal}
-              className="add-button"
+              className="btn btn-success d-flex align-items-center gap-2"
             >
-              <i className="fas fa-plus text-sm"></i>
-              Add Task
+              <i className="fas fa-plus"></i>
+              Add New Task
             </button>
             <button
               onClick={handleLogout}
@@ -946,7 +952,6 @@ function TodoList() {
                   <option value="Pending">Pending</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Completed">Completed</option>
-                  <option value="Expired">Expired</option>
                 </select>
                 <i className="fas fa-filter filter-icon"></i>
               </div>
@@ -1027,7 +1032,7 @@ function TodoList() {
                             </span>
                           </div>
                         </div>
-                        <div className="date-task-actions">
+                        <div className="date-task-actions d-flex align-items-center">
                           <button onClick={() => viewTaskDetails(task)} className="date-task-button" title="View details">
                             <i className="fas fa-eye"></i>
                           </button>
@@ -1057,348 +1062,417 @@ function TodoList() {
                 <p>No tasks yet. Click the "Add Task" button to create your first task.</p>
               </div>
             ) : (
-              <table className="task-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th className="sortable" onClick={() => sortBy("status")}>
-                      Status
-                      <i className={`fas ${sortOptions.sortField === 'status' 
-                        ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                        : 'fa-sort'}`}></i>
-                    </th>
-                    <th className="sortable" onClick={() => sortBy("priority")}>
-                      Priority 
-                      <i className={`fas ${sortOptions.sortField === 'priority' 
-                        ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                        : 'fa-sort'}`}></i>
-                    </th>
-                    <th className="sortable" onClick={() => sortBy("deadline")}>
-                      Deadline 
-                      <i className={`fas ${sortOptions.sortField === 'deadline' 
-                        ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                        : 'fa-sort'}`}></i>
-                    </th>
-                    <th className="sortable" onClick={() => sortBy("createdAt")}>
-                      Create Time 
-                      <i className={`fas ${sortOptions.sortField === 'createdAt' 
-                        ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                        : 'fa-sort'}`}></i>
-                    </th>
-                    <th className="task-hours">Est. Hours</th>
-                    <th>Details</th>
-                    <th className="actions-header">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAndSortedTasks.map((task) => {
-                    const isInactive = task.status === 'Completed' || task.status === 'Expired';
-                    return (
-                      <tr
-                        key={task.id}
-                        className={`task-row task-row-${task.priority.toLowerCase()} ${isInactive ? 'task-row-inactive' : ''}`}
-                      >
-                        <td className="task-id">#{task.displayId || '0000'}</td>
-                        <td>
-                          <span className={`status-badge status-${(task.status || 'pending').toLowerCase().replace(' ', '-')}`}>
-                            {task.status || 'Pending'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`priority-badge priority-${task.priority.toLowerCase()}`}>
-                            {task.priority}
-                          </span>
-                        </td>
-                        <td className="task-deadline">{formatDate(task.deadline)}</td>
-                        <td className="task-create-time">{formatDate(task.createdAt)}</td>
-                        <td className="task-hours">{task.hours}h</td>
-                        <td className="task-details">
-                          {task.details.length > 40 
-                            ? `${task.details.substring(0, 40)}...` 
-                            : task.details}
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <button
-                              onClick={() => viewTaskDetails(task)}
-                              className="action-button view-button"
-                              title="View details"
-                            >
-                              <i className="fas fa-eye"></i> View
-                            </button>
-                            <button
-                              onClick={() => editTask(task)}
-                              className="action-button edit-button"
-                              title="Update task"
-                            >
-                              <i className="fas fa-edit"></i> Update
-                            </button>
-                            <button
-                              onClick={() => deleteTask(task.id || task._id)}
-                              className="action-button delete-button"
-                              title="Delete task"
-                            >
-                              <i className="fas fa-trash"></i> Delete
-                            </button>
-                          </div>
-                        </td>
+              <div className="card shadow-sm mb-4">
+                <div className="card-body overflow-auto">
+                  <table className="table table-hover align-middle">
+                    <thead>
+                      <tr className="text-center fs-6">
+                        <th className="text-center">ID</th>
+                        <th className="sortable text-center" onClick={() => sortBy("priority")}>
+                          Priority 
+                          <i className={`fas ${sortOptions.sortField === 'priority' 
+                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
+                            : 'fa-sort'}`} title={
+                              sortOptions.sortField === 'priority' 
+                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
+                                : 'Click for ascending order'
+                            }></i>
+                        </th>
+                        <th className="sortable text-center" onClick={() => sortBy("status")}>
+                          Status 
+                          <i className={`fas ${sortOptions.sortField === 'status' 
+                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
+                            : 'fa-sort'}`} title={
+                              sortOptions.sortField === 'status' 
+                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
+                                : 'Click for ascending order'
+                            }></i>
+                        </th>
+                        <th className="sortable text-center" onClick={() => sortBy("deadline")}>
+                          Deadline 
+                          <i className={`fas ${sortOptions.sortField === 'deadline' 
+                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
+                            : 'fa-sort'}`} title={
+                              sortOptions.sortField === 'deadline' 
+                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
+                                : 'Click for ascending order'
+                            }></i>
+                        </th>
+                        <th className="sortable text-center" onClick={() => sortBy("startTime")}>
+                          Start Time
+                          <i className={`fas ${sortOptions.sortField === 'startTime' 
+                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
+                            : 'fa-sort'}`} title={
+                              sortOptions.sortField === 'startTime' 
+                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
+                                : 'Click for ascending order'
+                            }></i>
+                        </th>
+                        <th className="text-center">Est. Hours</th>
+                        <th className="sortable text-center" onClick={() => sortBy("createdAt")}>
+                          Create Time
+                          <i className={`fas ${sortOptions.sortField === 'createdAt' 
+                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
+                            : 'fa-sort'}`} title={
+                              sortOptions.sortField === 'createdAt' 
+                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
+                                : 'Click for ascending order'
+                            }></i>
+                        </th>
+                        <th className="text-center">Details</th>
+                        <th className="actions-header text-center">Actions</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {filteredAndSortedTasks.map((task) => {
+                        const isInactive = task.status === 'Completed' || task.status === 'Expired';
+                        return (
+                          <tr
+                            key={task.id}
+                            className={`task-row task-row-${task.priority.toLowerCase()} ${isInactive ? 'task-row-inactive' : ''} fs-6`}
+                          >
+                            <td className="text-center fw-bold">#{task.displayId || '0000'}</td>
+                            <td className="text-center">
+                              <span className={`badge fs-6 ${task.priority === 'High' ? 'bg-danger' : task.priority === 'Medium' ? 'bg-warning text-dark' : 'bg-success'}`}>
+                                {task.priority}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              <span className={`badge fs-6 ${
+                                task.status === 'Completed' ? 'bg-success' : 
+                                task.status === 'In Progress' ? 'bg-primary' :
+                                task.status === 'Expired' ? 'bg-secondary' : 'bg-warning text-dark'
+                              }`}>
+                                {task.status}
+                              </span>
+                            </td>
+                            <td className="text-center">{formatDate(task.deadline)}</td>
+                            <td className="text-center">{task.startTime ? formatDate(task.startTime) : "None"}</td>
+                            <td className="text-center">{task.hours}h</td>
+                            <td className="text-center">{formatDate(task.createdAt)}</td>
+                            <td className="text-start text-truncate" style={{ maxWidth: "150px" }}>
+                              {task.details.length > 30 
+                                ? `${task.details.substring(0, 30)}...` 
+                                : task.details}
+                            </td>
+                            <td>
+                              <div className="d-flex justify-content-center gap-2">
+                                <button
+                                  onClick={() => viewTaskDetails(task)}
+                                  className="btn btn-sm btn-outline-primary"
+                                  title="View details"
+                                >
+                                  <i className="fas fa-eye"></i> View
+                                </button>
+                                <button
+                                  onClick={() => editTask(task)}
+                                  className="btn btn-sm btn-outline-secondary"
+                                  title="Edit task"
+                                >
+                                  <i className="fas fa-edit"></i> Update
+                                </button>
+                                <button
+                                  onClick={() => deleteTask(task.id || task._id)}
+                                  className="btn btn-sm btn-outline-danger"
+                                  title="Delete task"
+                                >
+                                  <i className="fas fa-trash"></i> Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             )}
           </div>
         )}
 
         {/* Pagination control - Display only when table view and multiple pages */}
         {!showCalendar && !loading && tasks.length > 0 && pagination.pages > 1 && (
-          <div className="pagination">
-            {renderPaginationButtons()}
-            <span className="pagination-info">
+          <nav aria-label="Task pagination">
+            <ul className="pagination justify-content-center">
+              <li className={`page-item ${pagination.page === 1 ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link" 
+                  onClick={() => paginate(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                >
+                  <i className="fas fa-chevron-left"></i>
+                </button>
+              </li>
+              
+              {/* Page number buttons */}
+              {Array.from({ length: pagination.pages }, (_, i) => (
+                <li key={i + 1} className={`page-item ${pagination.page === i + 1 ? 'active' : ''}`}>
+                  <button 
+                    className="page-link" 
+                    onClick={() => paginate(i + 1)}
+                  >
+                    {i + 1}
+                  </button>
+                </li>
+              ))}
+              
+              <li className={`page-item ${pagination.page === pagination.pages ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link" 
+                  onClick={() => paginate(pagination.page + 1)}
+                  disabled={pagination.page === pagination.pages}
+                >
+                  <i className="fas fa-chevron-right"></i>
+                </button>
+              </li>
+            </ul>
+            <div className="text-center text-muted small">
               Page {pagination.page} of {pagination.pages}, {pagination.total} items total
-            </span>
-          </div>
+            </div>
+          </nav>
         )}
       </main>
 
       {/* Add/Edit Modal */}
       {(showAddModal || showEditModal) && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <h2 className="modal-title">
-              {showEditModal ? "Update Task" : "Add New Task"}
-            </h2>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">
-                  Status <span className="required">*</span>
-                </label>
-                <div className="form-select-container">
-                  <select
-                    value={formData.status || "Pending"}
-                    onChange={(e) => {
-                      // Add logging to track status change
-                      console.log('Status changed from', formData.status, 'to', e.target.value);
-                      setFormData({ ...formData, status: e.target.value });
-                    }}
-                    className="form-select"
-                    disabled={!showEditModal} // Fixed as Pending when adding, editable when updating
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                  <i className="fas fa-chevron-down select-arrow"></i>
-                </div>
-                {formData.deadline && (() => {
-                  // Fix date comparison logic
-                  const currentDate = new Date();
-                  // Remove timezone impact method: Use date part exact comparison
-                  const currentDateStr = currentDate.toISOString().split('T')[0]; // For example '2023-03-26'
-                  const deadlineDateStr = formData.deadline; // Already 'YYYY-MM-DD' format
-                  
-                  // Debug
-                  console.log('Current date:', currentDateStr, 'Deadline date:', deadlineDateStr);
-                  
-                  // Only show warning when deadline is strictly earlier than current date and status is not "Completed"
-                  return deadlineDateStr < currentDateStr && formData.status !== 'Completed' ? (
-                    <p className="form-hint" style={{color: '#dc2626', fontSize: '0.8rem', marginTop: '0.25rem'}}>
-                      This task is past its deadline and will be marked as Expired upon save.
-                    </p>
-                  ) : null;
-                })()}
-              </div>
-              <div className="form-group">
-                <label className="form-label">
-                  Priority <span className="required">*</span>
-                </label>
-                <div className="form-select-container">
-                  <select
-                    value={formData.priority}
-                    onChange={(e) =>
-                      setFormData({ ...formData, priority: e.target.value })
-                    }
-                    className="form-select"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                  <i className="fas fa-chevron-down select-arrow"></i>
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">
-                  Deadline <span className="required">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={formData.deadline}
-                  onChange={(e) =>
-                    setFormData({ ...formData, deadline: e.target.value })
-                  }
-                  // Ensure today (today) is selectable earliest date
-                  min={!showEditModal ? new Date().toISOString().split('T')[0] : undefined}
-                  className="form-input"
-                  style={{ boxSizing: 'border-box', width: '100%' }}
-                  required
-                />
-                {!showEditModal && (
-                  <p className="form-hint" style={{fontSize: '0.8rem', marginTop: '0.25rem', color: '#6b7280'}}>
-                    Deadline can be today or any future date
-                  </p>
-                )}
-              </div>
-              <div className="form-group">
-                <label className="form-label">
-                  Estimated Hours <span className="required">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={formData.hours}
-                  onChange={(e) =>
-                    setFormData({ ...formData, hours: e.target.value })
-                  }
-                  min="1"
-                  className="form-input"
-                  style={{ boxSizing: 'border-box', width: '100%' }}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">
-                  Details <span className="required">*</span>
-                </label>
-                <textarea
-                  value={formData.details}
-                  onChange={(e) =>
-                    setFormData({ ...formData, details: e.target.value })
-                  }
-                  rows="3"
-                  className="form-textarea"
-                  style={{ boxSizing: 'border-box', width: '100%' }}
-                  required
-                />
-              </div>
-              <div className="form-buttons">
-                <button
-                  type="button"
+        <div className="modal show d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  {showEditModal ? "Edit Task" : "Add New Task"}
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close"
                   onClick={closeModal}
-                  className="cancel-button"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="submit-button">
-                  {showEditModal ? "Update Task" : "Add Task"}
-                </button>
+                  aria-label="Close"
+                ></button>
               </div>
-            </form>
+              <div className="modal-body">
+                <form onSubmit={handleSubmit}>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Priority <span className="text-danger">*</span>
+                    </label>
+                    <select
+                      value={formData.priority}
+                      onChange={(e) =>
+                        setFormData({ ...formData, priority: e.target.value })
+                      }
+                      className="form-select"
+                    >
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Status <span className="text-danger">*</span>
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) =>
+                        setFormData(prev => {
+                          // Reset start time when changing to Pending
+                          if (e.target.value === 'Pending') {
+                            return { ...prev, status: e.target.value, startTime: '' };
+                          }
+                          return { ...prev, status: e.target.value };
+                        })
+                      }
+                      className="form-select"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                    {showEditModal && formData.status === 'Expired' && (
+                      <small className="form-text text-muted">
+                        The "Expired" status is automatically assigned by the system when a deadline has passed.
+                      </small>
+                    )}
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Start Time {formData.status === 'In Progress' && <span className="text-danger">*</span>}
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.startTime}
+                      onChange={(e) =>
+                        setFormData({ ...formData, startTime: e.target.value })
+                      }
+                      className="form-control"
+                      disabled={formData.status === 'Pending'}
+                      required={formData.status === 'In Progress'}
+                      min={new Date().toISOString().split('T')[0]} // Can't select dates before today
+                    />
+                    {formData.status === 'Pending' && (
+                      <small className="form-text text-muted">
+                        Start time can only be set when task is In Progress.
+                      </small>
+                    )}
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Deadline <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.deadline}
+                      onChange={(e) =>
+                        setFormData({ ...formData, deadline: e.target.value })
+                      }
+                      className="form-control"
+                      required
+                      min={formData.status === 'In Progress' && formData.startTime ? formData.startTime : new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Estimated Hours <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.hours}
+                      onChange={(e) =>
+                        setFormData({ ...formData, hours: e.target.value })
+                      }
+                      min="1"
+                      className="form-control"
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      Details <span className="text-danger">*</span>
+                    </label>
+                    <textarea
+                      value={formData.details}
+                      onChange={(e) =>
+                        setFormData({ ...formData, details: e.target.value })
+                      }
+                      rows="3"
+                      className="form-control"
+                      required
+                    ></textarea>
+                  </div>
+                  <div className="d-flex justify-content-end gap-2">
+                    <button
+                      type="button"
+                      onClick={closeModal}
+                      className="btn btn-secondary"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      {showEditModal ? "Save Changes" : "Add Task"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* View Task Details Modal */}
       {showViewModal && viewingTask && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <h2 className="modal-title">View Task Details</h2>
-            <div className="form-content">
-              <div className="form-group">
-                <label className="form-label">
-                  Task ID
-                </label>
-                <input
-                  type="text"
-                  value={viewingTask.displayId || '0000'}
-                  className="form-input"
-                  readOnly
-                />
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">
-                  Status
-                </label>
-                <div className="form-select-container">
-                  <input
-                    type="text"
-                    value={viewingTask.status || 'Pending'}
-                    className="form-input"
-                    readOnly
-                  />
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">
-                  Priority
-                </label>
-                <div className="form-select-container">
-                  <input
-                    type="text"
-                    value={viewingTask.priority}
-                    className="form-input"
-                    readOnly
-                  />
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">
-                  Deadline
-                </label>
-                <input
-                  type="text"
-                  value={formatDate(viewingTask.deadline)}
-                  className="form-input"
-                  readOnly
-                />
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">
-                  Create Time
-                </label>
-                <input
-                  type="text"
-                  value={formatDate(viewingTask.createdAt) || 'Not recorded'}
-                  className="form-input"
-                  readOnly
-                />
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">
-                  Estimated Hours
-                </label>
-                <input
-                  type="text"
-                  value={`${viewingTask.hours}h`}
-                  className="form-input"
-                  readOnly
-                />
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">
-                  Details
-                </label>
-                <textarea
-                  value={viewingTask.details}
-                  rows="3"
-                  className="form-textarea"
-                  style={{ boxSizing: 'border-box', width: '100%' }}
-                  readOnly
-                />
-              </div>
-              
-              <div className="form-buttons">
-                <button
-                  type="button"
+        <div className="modal show d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Task Details</h5>
+                <button 
+                  type="button" 
+                  className="btn-close"
                   onClick={closeViewModal}
-                  className="submit-button"
-                >
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="view-only-form">
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">ID</label>
+                    <input
+                      type="text"
+                      value={`#${viewingTask.displayId || viewingTask.id}`}
+                      className="form-control bg-light"
+                      readOnly
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Priority</label>
+                    <div className="form-control bg-light d-flex align-items-center">
+                      <span className={`badge ${viewingTask.priority === 'High' ? 'bg-danger' : viewingTask.priority === 'Medium' ? 'bg-warning text-dark' : 'bg-success'}`}>
+                        {viewingTask.priority}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Status</label>
+                    <div className="form-control bg-light d-flex align-items-center">
+                      <span className={`badge ${
+                        viewingTask.status === 'Completed' ? 'bg-success' : 
+                        viewingTask.status === 'In Progress' ? 'bg-primary' :
+                        viewingTask.status === 'Expired' ? 'bg-secondary' : 'bg-warning text-dark'
+                      }`}>
+                        {viewingTask.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Start Time</label>
+                    <input
+                      type="text"
+                      value={viewingTask.startTime ? formatDate(viewingTask.startTime) : "None"}
+                      className="form-control bg-light"
+                      readOnly
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Deadline</label>
+                    <input
+                      type="text"
+                      value={formatDate(viewingTask.deadline)}
+                      className="form-control bg-light"
+                      readOnly
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Estimated Hours</label>
+                    <input
+                      type="text"
+                      value={`${viewingTask.hours}h`}
+                      className="form-control bg-light"
+                      readOnly
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Details</label>
+                    <textarea
+                      value={viewingTask.details}
+                      rows="3"
+                      className="form-control bg-light"
+                      readOnly
+                    ></textarea>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Created At</label>
+                    <input
+                      type="text"
+                      value={formatDate(viewingTask.createdAt)}
+                      className="form-control bg-light"
+                      readOnly
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button onClick={closeViewModal} className="btn btn-secondary">
                   Close
                 </button>
               </div>
@@ -1409,26 +1483,43 @@ function TodoList() {
 
       {/* Delete Confirmation */}
       {showDeleteModal && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <h3 className="modal-title">Confirm Delete</h3>
-            <p className="delete-modal-message">
-              Are you sure you want to delete this task? This action cannot be
-              undone.
-            </p>
-            <div className="delete-countdown">
-              Auto close in {deleteCountdown} seconds...
-            </div>
-            <div className="form-buttons">
-              <button onClick={cancelDelete} className="cancel-button">
-                Cancel
-              </button>
-              <button onClick={confirmDelete} className="delete-button-confirm">
-                Delete
-              </button>
+        <div className="modal show d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Confirm Delete</h5>
+                <button 
+                  type="button" 
+                  className="btn-close"
+                  onClick={cancelDelete}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p>
+                  Are you sure you want to delete this task? This action cannot be
+                  undone.
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button onClick={cancelDelete} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button onClick={confirmDelete} className="btn btn-danger">
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* 模态框背景遮罩 */}
+      {(showAddModal || showEditModal || showDeleteModal || showViewModal) && (
+        <div 
+          className="modal-backdrop fade show"
+          onClick={closeModal}
+        ></div>
       )}
     </div>
   );

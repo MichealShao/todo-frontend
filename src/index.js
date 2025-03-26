@@ -1,6 +1,14 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import ReactDOM from 'react-dom';
+// 导入Bootstrap CSS
+import 'bootstrap/dist/css/bootstrap.min.css';
+// 导入Bootstrap JS bundle
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+// 导入自定义样式（在Bootstrap之后导入，以便可以覆盖Bootstrap样式）
 import './styles/index.css';
+import './styles/Auth.css';
+import './styles/common.css';
+import './styles/TodoList.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
@@ -13,11 +21,11 @@ link.crossOrigin = 'anonymous';
 link.referrerPolicy = 'no-referrer';
 document.head.appendChild(link);
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
+ReactDOM.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
+  document.getElementById('root')
 );
 
 // If you want to start measuring performance in your app, pass a function
