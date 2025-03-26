@@ -45,7 +45,7 @@ export const authAPI = {
   // User registration
   register: async (userData) => {
     try {
-      const response = await api.post('/api/auth/register', userData);
+      const response = await api.post('/api/register', userData);
       return response.data;
     } catch (error) {
       console.error('Registration error:', error.response?.data || error.message);
@@ -56,7 +56,7 @@ export const authAPI = {
   // User login
   login: async (credentials) => {
     try {
-      const response = await api.post('/api/auth/login', credentials);
+      const response = await api.post('/api/login', credentials);
       // Store token if returned
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
