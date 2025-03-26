@@ -242,7 +242,7 @@ function TodoList() {
       }
     } catch (err) {
       console.error('Failed to fetch tasks:', err.response?.data || err.message || err);
-      setError('Failed to load tasks. Please refresh the page and try again.');
+      setError('Unable to load tasks. Please refresh the page or try again later.');
       if (err.response && err.response.status === 401) {
         // If unauthorized error, redirect to login page
         navigate('/');
@@ -385,7 +385,7 @@ function TodoList() {
       
       if (!taskId) {
         console.error('Task missing ID field:', task);
-        setError('Cannot edit task: Missing task ID');
+        setError('Task ID is missing. Please refresh the page and try again.');
         return;
       }
       
@@ -433,7 +433,7 @@ function TodoList() {
       // Ensure valid ID
       if (!id) {
         console.error('Attempted to delete task but ID is missing');
-        setError('Cannot delete task: Missing task ID');
+        setError('Unable to delete task: Task ID is missing');
         return;
       }
       
@@ -486,7 +486,7 @@ function TodoList() {
     
     // Validate form data
     if (!formData.details || formData.details.trim() === '') {
-      setError('Task details cannot be empty');
+      setError('Please enter task details. This field cannot be empty.');
       setIsProcessing(false);
       return;
     }
@@ -519,7 +519,7 @@ function TodoList() {
       if (showEditModal) {
         // Edit mode
         if (!editingTaskId) {
-          setError('Task ID is missing. Please refresh and try again.');
+          setError('Task ID is missing. Please refresh the page and try again.');
           setIsProcessing(false);
           return;
         }
