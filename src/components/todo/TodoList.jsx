@@ -782,7 +782,7 @@ function TodoList() {
   // ---------------------------
   return (
     <div className="todo-app">
-      {/* Header */}
+      {/* Header with responsive design */}
       <header className="header">
         <div className="header-content">
           <h1 className="app-title">Task Management</h1>
@@ -799,14 +799,15 @@ function TodoList() {
               className="btn btn-success d-flex align-items-center gap-2"
             >
               <i className="fas fa-plus"></i>
-              Add New Task
+              <span className="d-none d-sm-inline">Add New Task</span>
+              <span className="d-inline d-sm-none">Add</span>
             </button>
             <button
               onClick={handleLogout}
               className="logout-button"
             >
               <i className="fas fa-sign-out-alt"></i>
-              Logout
+              <span className="d-none d-sm-inline">Logout</span>
             </button>
           </div>
         </div>
@@ -814,7 +815,7 @@ function TodoList() {
 
       {/* Main Content */}
       <main className="main-content">
-        {/* Search and filter area */}
+        {/* Search and filter with responsive layout */}
         <div className="search-filter-bar">
           <div className="search-controls">
             <div className="controls-group search-control-row">
@@ -836,7 +837,7 @@ function TodoList() {
                 className={`calendar-button ${showCalendar ? 'active' : ''}`}
               >
                 <i className="fas fa-calendar-alt"></i>
-                <span>Daily Deadlines</span>
+                <span className="d-none d-md-inline">Daily Deadlines</span>
               </button>
               
               <div className="filter-select-container">
@@ -872,7 +873,7 @@ function TodoList() {
                 className="reset-button"
                 title="Reset sorting and filtering"
               >
-                <i className="fas fa-redo-alt"></i> Reset
+                <i className="fas fa-redo-alt"></i> <span className="d-none d-md-inline">Reset</span>
               </button>
             </div>
           </div>
@@ -1059,21 +1060,21 @@ function TodoList() {
                                   className="btn btn-sm btn-outline-primary"
                                   title="View details"
                                 >
-                                  <i className="fas fa-eye"></i> View
+                                  <i className="fas fa-eye"></i> <span className="d-none d-md-inline">View</span>
                                 </button>
                                 <button
                                   onClick={() => editTask(task)}
                                   className="btn btn-sm btn-outline-secondary"
                                   title="Edit task"
                                 >
-                                  <i className="fas fa-edit"></i> Update
+                                  <i className="fas fa-edit"></i> <span className="d-none d-md-inline">Update</span>
                                 </button>
                                 <button
                                   onClick={() => deleteTask(task.id || task._id)}
                                   className="btn btn-sm btn-outline-danger"
                                   title="Delete task"
                                 >
-                                  <i className="fas fa-trash"></i> Delete
+                                  <i className="fas fa-trash"></i> <span className="d-none d-md-inline">Delete</span>
                                 </button>
                               </div>
                             </td>

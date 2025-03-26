@@ -2,6 +2,10 @@
 .todo-app {
   min-height: 100vh;
   background-color: #f9fafb;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
 }
 
 .header {
@@ -119,6 +123,7 @@
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow-x: auto;
+  width: 100%;
 }
 
 .task-table {
@@ -868,6 +873,35 @@ input[type="number"] {
   }
 }
 
+@media (max-width: 992px) {
+  .header-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .header-actions {
+    margin-top: 1rem;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .search-filter-bar {
+    flex-direction: column;
+  }
+  
+  .search-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .filter-group {
+    margin-top: 1rem;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 768px) {
   .search-input-container {
     max-width: 100%;
@@ -880,6 +914,124 @@ input[type="number"] {
   
   .filter-group {
     width: 100%;
+  }
+  
+  .calendar-container-wrapper {
+    flex-direction: column;
+  }
+  
+  .table th, .table td {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .btn-sm {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.8rem;
+  }
+  
+  /* 调整操作按钮 */
+  .task-row .d-flex.justify-content-center {
+    flex-direction: column;
+    gap: 0.25rem !important;
+  }
+  
+  .btn-sm {
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .header-content {
+    padding: 0.5rem;
+  }
+  
+  .app-title {
+    font-size: 1.5rem;
+  }
+  
+  /* 精简表格列 */
+  .table th:nth-child(3),
+  .table td:nth-child(3),
+  .table th:nth-child(5),
+  .table td:nth-child(5),
+  .table th:nth-child(6),
+  .table td:nth-child(6) {
+    display: none;
+  }
+  
+  /* 调整操作按钮文本 */
+  .btn-sm i {
+    margin-right: 0;
+  }
+  
+  .btn-sm span {
+    display: none;
+  }
+  
+  /* 优化模态框 */
+  .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  .form-control, .form-select {
+    font-size: 0.9rem;
+  }
+  
+  /* 日历视图调整 */
+  .calendar-grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  
+  .calendar-day {
+    height: 40px;
+    font-size: 0.8rem;
+  }
+  
+  .day-number {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .table {
+    font-size: 0.75rem;
+  }
+  
+  .table th, .table td {
+    padding: 0.25rem;
+  }
+  
+  /* 进一步简化表格 */
+  .table th:nth-child(7),
+  .table td:nth-child(7) {
+    display: none;
+  }
+  
+  .pagination .page-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* 打印样式优化 */
+@media print {
+  .btn, .header-actions, .search-filter-bar, .pagination {
+    display: none !important;
+  }
+  
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+  }
+  
+  .todo-app {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
   }
 }
 
