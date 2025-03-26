@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Create API base configuration
-const API_BASE_URL = 'http://localhost:5001'; // Modify according to actual backend address
+const API_BASE_URL = 'https://todo-backend-one-jet.vercel.app'; // Modify according to actual backend address
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -34,7 +34,7 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Token invalid or expired, redirect to login page
       localStorage.removeItem('token');
-      window.location.href = '/';
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
@@ -44,17 +44,28 @@ api.interceptors.response.use(
 export const authAPI = {
   // User registration
   register: async (userData) => {
-    const response = await api.post('/api/register', userData);
-    return response.data;
+    try {
+      const response = await api.post('/api/auth/register', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Registration error:', error.response?.data || error.message);
+      throw error;
+    }
   },
   
   // User login
   login: async (credentials) => {
-    const response = await api.post('/api/login', credentials);
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+    try {
+      const response = await api.post('/api/auth/login', credentials);
+      // Store token if returned
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Login error:', error.response?.data || error.message);
+      throw error;
     }
-    return response.data;
   },
   
   // Logout
@@ -66,14 +77,12 @@ export const authAPI = {
 // Task related APIs
 export const tasksAPI = {
   // Get all tasks
-  getAllTasks: async (page = 1, limit = 20, sortField = 'createdAt', sortDirection = 'desc') => {
+  getAllTasks: async () => {
     try {
-      const response = await api.get('/api/tasks', {
-        params: { page, limit, sortField, sortDirection },
-      });
+      const response = await api.get('/api/tasks');
       return response.data;
     } catch (error) {
-      console.error('API Error:', error);
+      console.error('Get tasks error:', error.response?.data || error.message);
       throw error;
     }
   },
@@ -95,66 +104,29 @@ export const tasksAPI = {
       const response = await api.post('/api/tasks', taskData);
       return response.data;
     } catch (error) {
-      console.error('API Error:', error);
+      console.error('Create task error:', error.response?.data || error.message);
       throw error;
     }
   },
   
   // Update task
-  updateTask: async (id, taskData) => {
+  updateTask: async (taskId, taskData) => {
     try {
-      console.log('Sending update with status:', taskData.status);
-      console.log('Updating task ID:', id);
-      if (taskData.hours && typeof taskData.hours === 'string') {
-        taskData.hours = parseInt(taskData.hours, 10);
-      }
-      
-      const requestData = {
-        ...taskData,
-        id
-      };
-      
-      console.log('Complete request data:', requestData);
-      
-      const response = await api.put(`/api/tasks/${id}`, requestData);
-      
-      const result = response.data;
-      if (!result.id && id) {
-        result.id = id;
-      }
-      
-      console.log('API update response result:', result);
-      return result;
+      const response = await api.put(`/api/tasks/${taskId}`, taskData);
+      return response.data;
     } catch (error) {
-      console.error('Update task API error:', error.response?.data || error.message || error);
+      console.error('Update task error:', error.response?.data || error.message);
       throw error;
     }
   },
   
   // Delete task
-  deleteTask: async (id) => {
+  deleteTask: async (taskId) => {
     try {
-      // Ensure ID exists and has correct format
-      if (!id) {
-        throw new Error('Task ID is required for deletion');
-      }
-      
-      // Output debug information
-      console.log('Deleting task, ID:', id);
-      
-      const response = await api.delete(`/api/tasks/${id}`);
-      
-      console.log('Delete task API response:', response.data);
+      const response = await api.delete(`/api/tasks/${taskId}`);
       return response.data;
     } catch (error) {
-      console.error('Delete task API error:', error.response?.data || error.message || error);
-      
-      // If 404 error, task may not exist, still return success for UI update
-      if (error.response && error.response.status === 404) {
-        console.log('Task does not exist or already deleted');
-        return { success: true, message: 'Task not found or already deleted' };
-      }
-      
+      console.error('Delete task error:', error.response?.data || error.message);
       throw error;
     }
   }

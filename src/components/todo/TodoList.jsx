@@ -2,7 +2,6 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import '../../styles/TodoList.css';
 import { tasksAPI, authAPI } from "../../services/api";
-import axios from "axios";
 
 /**
  * This is a TodoList component with:
@@ -212,9 +211,6 @@ function TodoList() {
   // Currently editing task ID (null means not in edit mode)
   const [editingTaskId, setEditingTaskId] = useState(null);
 
-  // 更新API基础URL
-  const API_BASE_URL = 'https://todo-backend-one-jet.vercel.app';
-
   // Fetch tasks when component loads
   useEffect(() => {
     fetchTasks();
@@ -225,11 +221,11 @@ function TodoList() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/tasks`);
+      const response = await tasksAPI.getAllTasks();
       console.log('Fetched task data:', response);
       
       // Generate display ID for each task
-      const tasksWithDisplayId = response.data.tasks.map(task => ({
+      const tasksWithDisplayId = response.tasks.map(task => ({
         ...task,
         displayId: task.displayId || generateDisplayId(task)
       }));
@@ -237,8 +233,8 @@ function TodoList() {
       setTasks(tasksWithDisplayId);
       
       // Update pagination info
-      if (response.data.pagination) {
-        setPagination(response.data.pagination);
+      if (response.pagination) {
+        setPagination(response.pagination);
       }
     } catch (err) {
       console.error('Failed to fetch tasks:', err.response?.data || err.message || err);
@@ -420,10 +416,9 @@ function TodoList() {
     console.log('Preparing to delete task ID:', deleteTaskId);
     
     try {
-      const response = await axios.delete(`${API_BASE_URL}/api/tasks/${deleteTaskId}`);
-      console.log('Task deleted successfully:', response);
+      await tasksAPI.deleteTask(deleteTaskId);
       
-      // Regardless of API call result, ensure task is removed from local state
+      // Remove task from local state
       setTasks((prev) => prev.filter((t) => {
         const taskId = t.id || t._id;
         return taskId !== deleteTaskId;
@@ -432,14 +427,7 @@ function TodoList() {
       setError(null);
     } catch (err) {
       console.error('Failed to delete task:', err);
-      console.log('Delete error details:', err.response?.data || err.message);
       setError('Failed to delete task. Please try again.');
-      
-      // Even if API call fails, remove task from local state to ensure UI updates promptly
-      setTasks((prev) => prev.filter((t) => {
-        const taskId = t.id || t._id;
-        return taskId !== deleteTaskId;
-      }));
     } finally {
       setShowDeleteModal(false);
       setDeleteTaskId(null);
@@ -457,10 +445,6 @@ function TodoList() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    
-    // Debug: Check submitted form data
-    console.log('Submitted form data:', formData);
-    console.log('Editing task ID:', editingTaskId);
     
     // Validate form data
     if (!formData.details || formData.details.trim() === '') {
@@ -480,155 +464,69 @@ function TodoList() {
       setError('Deadline cannot be earlier than Start Time. Please adjust the dates.');
       return;
     }
-    
-    // Check if task is expired
-    // Use string comparison to avoid timezone and time issues
-    const isExpired = formData.deadline < currentDateStr;
-    
-    // If expired and status is not "Completed", automatically set to "Expired"
-    let autoStatus = formData.status;
-    if (isExpired && formData.status !== 'Completed') {
-      autoStatus = 'Expired';
-      console.log('Task is expired, automatically setting status to Expired');
-    }
-    
-    // Handle start time logic based on status
-    let startTime = formData.startTime;
-    if (autoStatus === 'Pending') {
-      // Reset start time for Pending tasks
-      startTime = '';
-    } else if (autoStatus === 'In Progress' && startTime) {
-      // Validate start time is not before current date for In Progress tasks
-      if (startTime < currentDateStr) {
-        setError('Start time cannot be before today for In Progress tasks.');
-        return;
-      }
-    }
-    
-    // Ensure numeric fields have correct default values
+
     const taskData = {
       ...formData,
       priority: formData.priority || 'Medium',
       deadline: formData.deadline || new Date().toISOString().split('T')[0],
       hours: formData.hours ? parseInt(formData.hours, 10) : 1,
-      status: autoStatus || 'Pending',
-      startTime: startTime
+      status: formData.status || 'Pending',
+      startTime: formData.startTime
     };
-    
-    // Debug: Check prepared data to send
-    console.log('Prepared task data to send:', taskData);
-    
+
     if (showEditModal) {
       // Edit mode
       try {
-        console.log('Preparing to update task ID:', editingTaskId, 'Data:', taskData);
-        
-        // Defensive programming: Ensure edit ID exists
         if (!editingTaskId) {
-          console.error('Missing ID when updating task');
           setError('Task ID is missing. Please refresh and try again.');
           return;
         }
         
-        const updatedTask = await axios.put(`${API_BASE_URL}/api/tasks/${editingTaskId}`, taskData);
-        console.log('Task updated successfully:', updatedTask, 'Original status:', formData.status, 'Updated status:', updatedTask.data.status);
+        const updatedTask = await tasksAPI.updateTask(editingTaskId, taskData);
         
-        // Update local task data
         setTasks((prev) => {
           return prev.map((t) => {
-            // Compatible with different ID field names
             const taskId = t.id || t._id;
             if (taskId === editingTaskId) {
-              // Use API returned data or form data for update
-              // Ensure ID is preserved
-              const result = {
+              return {
                 ...t,
-                ...taskData,
-                id: taskId, // Ensure ID is not lost
-                displayId: t.displayId // Ensure display ID is unchanged
+                ...updatedTask,
+                id: taskId,
+                displayId: t.displayId
               };
-              
-              // If API returned complete data, use API data but preserve ID
-              if (updatedTask.data) {
-                result.status = updatedTask.data.status || result.status;
-                result.priority = updatedTask.data.priority || result.priority;
-                result.deadline = updatedTask.data.deadline || result.deadline;
-                result.hours = updatedTask.data.hours || result.hours;
-                result.details = updatedTask.data.details || result.details;
-              }
-              
-              console.log('Updated task object:', result);
-              return result;
             }
             return t;
           });
         });
         
-        // Temporarily commented out re-fetch to avoid interface refresh causing state loss
-        // if (sortOptions.sortField === 'status') {
-        //   fetchTasks();
-        // }
+        closeEditModal();
       } catch (err) {
         console.error('Failed to update task:', err);
-        console.log('Error details:', err.response?.data || err.message);
-        
-        // More detailed error information
-        if (err.response?.data) {
-          setError(`Failed to update task: ${err.response.data.message || JSON.stringify(err.response.data)}`);
-        } else {
-          setError('Failed to update task. Please try again. ' + (err.message || ''));
-        }
-        
-        // Even if API call fails, update local state to improve user experience
-        if (editingTaskId) {
-          setTasks((prev) => {
-            return prev.map((t) => {
-              // Compatible with different ID field names
-              const taskId = t.id || t._id;
-              if (taskId === editingTaskId) {
-                return {
-                  ...t,
-                  ...taskData,
-                  id: taskId, // Ensure ID is not lost
-                  displayId: t.displayId // Ensure display ID is unchanged
-                };
-              }
-              return t;
-            });
-          });
-        }
-        
-        // Don't close modal, let user retry
-        return;
+        setError('Failed to update task. Please try again.');
       }
-      closeEditModal();
     } else {
       // Add mode
       try {
-        console.log('Preparing to create new task:', taskData);
-        
-        // Ensure new task has creation time field
         const taskWithCreatedAt = {
           ...taskData,
           createdAt: new Date().toISOString()
         };
         
-        const newTask = await axios.post(`${API_BASE_URL}/api/tasks`, taskWithCreatedAt);
-        console.log('New task created successfully:', newTask);
+        const newTask = await tasksAPI.createTask(taskWithCreatedAt);
         
         // Generate display ID for new task
-        const displayId = generateDisplayId(newTask.data);
+        const displayId = generateDisplayId(newTask);
 
-        // Add new task with display ID
         setTasks((prev) => [...prev, {
-          ...newTask.data,
+          ...newTask,
           displayId: displayId
         }]);
+        
+        closeAddModal();
       } catch (err) {
-        console.error('Failed to create task:', err.response?.data || err.message || err);
+        console.error('Failed to create task:', err);
         setError('Failed to create task. Please try again.');
       }
-      closeAddModal();
     }
   };
 
