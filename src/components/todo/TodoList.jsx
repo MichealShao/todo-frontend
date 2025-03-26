@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import '../../styles/TodoList.css';
 import { tasksAPI, authAPI } from "../../services/api";
+import axios from "axios";
 
 /**
  * This is a TodoList component with:
@@ -211,6 +212,9 @@ function TodoList() {
   // Currently editing task ID (null means not in edit mode)
   const [editingTaskId, setEditingTaskId] = useState(null);
 
+  // 更新API基础URL
+  const API_BASE_URL = 'https://todo-backend-one-jet.vercel.app';
+
   // Fetch tasks when component loads
   useEffect(() => {
     fetchTasks();
@@ -221,16 +225,11 @@ function TodoList() {
     setLoading(true);
     setError(null);
     try {
-      const response = await tasksAPI.getAllTasks(
-        pagination.page, 
-        pagination.limit,
-        sortOptions.sortField,
-        sortOptions.sortDirection
-      );
+      const response = await axios.get(`${API_BASE_URL}/api/tasks`);
       console.log('Fetched task data:', response);
       
       // Generate display ID for each task
-      const tasksWithDisplayId = response.tasks.map(task => ({
+      const tasksWithDisplayId = response.data.tasks.map(task => ({
         ...task,
         displayId: task.displayId || generateDisplayId(task)
       }));
@@ -238,8 +237,8 @@ function TodoList() {
       setTasks(tasksWithDisplayId);
       
       // Update pagination info
-      if (response.pagination) {
-        setPagination(response.pagination);
+      if (response.data.pagination) {
+        setPagination(response.data.pagination);
       }
     } catch (err) {
       console.error('Failed to fetch tasks:', err.response?.data || err.message || err);
@@ -421,7 +420,7 @@ function TodoList() {
     console.log('Preparing to delete task ID:', deleteTaskId);
     
     try {
-      const response = await tasksAPI.deleteTask(deleteTaskId);
+      const response = await axios.delete(`${API_BASE_URL}/api/tasks/${deleteTaskId}`);
       console.log('Task deleted successfully:', response);
       
       // Regardless of API call result, ensure task is removed from local state
@@ -531,8 +530,8 @@ function TodoList() {
           return;
         }
         
-        const updatedTask = await tasksAPI.updateTask(editingTaskId, taskData);
-        console.log('Task updated successfully:', updatedTask, 'Original status:', formData.status, 'Updated status:', updatedTask.status);
+        const updatedTask = await axios.put(`${API_BASE_URL}/api/tasks/${editingTaskId}`, taskData);
+        console.log('Task updated successfully:', updatedTask, 'Original status:', formData.status, 'Updated status:', updatedTask.data.status);
         
         // Update local task data
         setTasks((prev) => {
@@ -550,12 +549,12 @@ function TodoList() {
               };
               
               // If API returned complete data, use API data but preserve ID
-              if (updatedTask) {
-                result.status = updatedTask.status || result.status;
-                result.priority = updatedTask.priority || result.priority;
-                result.deadline = updatedTask.deadline || result.deadline;
-                result.hours = updatedTask.hours || result.hours;
-                result.details = updatedTask.details || result.details;
+              if (updatedTask.data) {
+                result.status = updatedTask.data.status || result.status;
+                result.priority = updatedTask.data.priority || result.priority;
+                result.deadline = updatedTask.data.deadline || result.deadline;
+                result.hours = updatedTask.data.hours || result.hours;
+                result.details = updatedTask.data.details || result.details;
               }
               
               console.log('Updated task object:', result);
@@ -614,15 +613,15 @@ function TodoList() {
           createdAt: new Date().toISOString()
         };
         
-        const newTask = await tasksAPI.createTask(taskWithCreatedAt);
+        const newTask = await axios.post(`${API_BASE_URL}/api/tasks`, taskWithCreatedAt);
         console.log('New task created successfully:', newTask);
         
         // Generate display ID for new task
-        const displayId = generateDisplayId(newTask);
+        const displayId = generateDisplayId(newTask.data);
 
         // Add new task with display ID
         setTasks((prev) => [...prev, {
-          ...newTask,
+          ...newTask.data,
           displayId: displayId
         }]);
       } catch (err) {
