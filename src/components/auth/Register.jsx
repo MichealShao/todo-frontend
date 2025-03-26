@@ -5,7 +5,7 @@ import { authAPI } from "../../services/api";
 
 export const Register = () => {
   const [formData, setFormData] = useState({
-    username: "",
+    name: "",
     email: "",
     password: "",
     confirmPassword: ""
@@ -36,16 +36,15 @@ export const Register = () => {
     setLoading(true);
     
     try {
-      // Remove confirmPassword before sending to API
-      const { confirmPassword, ...registerData } = formData;
-      const response = await authAPI.register(registerData);
-      console.log('Registration successful:', response);
-      
-      // Automatically login after registration
-      navigate('/todo');
+      await authAPI.register({ 
+        name: formData.name,
+        email: formData.email, 
+        password: formData.password 
+      });
+      navigate('/');
     } catch (err) {
+      setError(err.response?.data?.msg || 'Registration failed, please try again');
       console.error('Registration error:', err);
-      setError(err.response?.data?.msg || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -54,114 +53,101 @@ export const Register = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <div className="auth-brand">
-          <div className="logo-container">
-            <i className="fas fa-tasks brand-icon"></i>
-          </div>
-          <h1 className="auth-title">Task Management</h1>
-          <p className="auth-subtitle">Create your account</p>
+        <div className="auth-header">
+          <h1 className="auth-title">Create Account</h1>
+          <p className="auth-subtitle">Please complete the registration form</p>
         </div>
         
-        {error && <div className="auth-error"><i className="fas fa-exclamation-circle"></i> {error}</div>}
+        {error && <div className="auth-error">{error}</div>}
         
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">
-              <i className="fas fa-user input-icon"></i>
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              placeholder="Choose a username"
-              required
-              autoFocus
-            />
+            <label className="form-label" htmlFor="name">Full Name</label>
+            <div className="form-input-container">
+              <input
+                id="name"
+                type="text"
+                name="name"
+                className="form-input"
+                placeholder="John Doe"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
           </div>
           
           <div className="form-group">
-            <label htmlFor="email">
-              <i className="fas fa-envelope input-icon"></i>
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              required
-            />
+            <label className="form-label" htmlFor="email">Email</label>
+            <div className="form-input-container">
+              <input
+                id="email"
+                type="email"
+                name="email"
+                className="form-input"
+                placeholder="youremail@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
           </div>
           
           <div className="form-group">
-            <label htmlFor="password">
-              <i className="fas fa-lock input-icon"></i>
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Create a password"
-              required
-              minLength="6"
-            />
+            <label className="form-label" htmlFor="password">Password</label>
+            <div className="form-input-container">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                className="form-input"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                minLength="6"
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
           </div>
           
           <div className="form-group">
-            <label htmlFor="confirmPassword">
-              <i className="fas fa-check-circle input-icon"></i>
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirm your password"
-              required
-              minLength="6"
-            />
+            <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
+            <div className="form-input-container">
+              <input
+                id="confirmPassword"
+                type={showPassword ? "text" : "password"}
+                name="confirmPassword"
+                className="form-input"
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                minLength="6"
+              />
+            </div>
           </div>
           
-          <button type="submit" className="auth-button" disabled={loading}>
-            {loading ? (
-              <>
-                <span className="spinner"></span>
-                Creating account...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-user-plus"></i>
-                Register
-              </>
-            )}
+          <button 
+            type="submit" 
+            className="auth-button"
+            disabled={loading}
+          >
+            {loading ? 'Creating account...' : 'Register'}
           </button>
         </form>
         
         <div className="auth-footer">
-          <p>Already have an account? <Link to="/">Sign in</Link></p>
-        </div>
-        
-        <div className="auth-watermark">
-          Created by Micheal Shao
-        </div>
-      </div>
-      
-      <div className="auth-background">
-        <div className="auth-shapes">
-          <div className="shape shape-1"></div>
-          <div className="shape shape-2"></div>
-          <div className="shape shape-3"></div>
-          <div className="shape shape-4"></div>
+          Already have an account?{" "}
+          <Link to="/" className="auth-link">
+            Login
+          </Link>
         </div>
       </div>
     </div>
