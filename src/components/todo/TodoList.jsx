@@ -1253,7 +1253,7 @@ function TodoList() {
                     />
                     {formData.status === 'Pending' && (
                       <small className="form-text text-muted">
-                        Start time can only be set when task is In Progress.
+                        Start time can only be set when task is In Progress or Completed.
                       </small>
                     )}
                   </div>
