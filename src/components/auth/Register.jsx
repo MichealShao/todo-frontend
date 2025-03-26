@@ -5,7 +5,7 @@ import { authAPI } from "../../services/api";
 
 export const Register = () => {
   const [formData, setFormData] = useState({
-    username: "",
+    name: "",
     email: "",
     password: "",
     confirmPassword: ""
@@ -16,39 +16,35 @@ export const Register = () => {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     
+    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
-      return;
-    }
-    
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
       return;
     }
     
     setLoading(true);
     
     try {
-      const registerData = {
-        username: formData.username,
-        email: formData.email,
-        password: formData.password
-      };
-      
-      await authAPI.register(registerData);
-      navigate('/dashboard');
+      await authAPI.register({ 
+        name: formData.name,
+        email: formData.email, 
+        password: formData.password 
+      });
+      navigate('/');
     } catch (err) {
-      setError(err.response?.data?.msg || 'Registration failed. Please try again.');
+      setError(err.response?.data?.msg || 'Registration failed, please try again');
+      console.error('Registration error:', err);
     } finally {
       setLoading(false);
     }
@@ -58,77 +54,82 @@ export const Register = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <div className="logo-container">
-            <i className="fas fa-tasks logo-icon"></i>
-          </div>
-          <h1 className="auth-title">Task Manager</h1>
-          <p className="auth-subtitle">Create an account to start organizing your tasks</p>
+          <h1 className="auth-title">Create Account</h1>
+          <p className="auth-subtitle">Please complete the registration form</p>
         </div>
         
         {error && <div className="auth-error">{error}</div>}
         
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Username</label>
-            <div className="input-container">
-              <i className="fas fa-user input-icon"></i>
+            <label className="form-label" htmlFor="name">Full Name</label>
+            <div className="form-input-container">
               <input
+                id="name"
                 type="text"
-                name="username"
-                value={formData.username}
+                name="name"
+                className="form-input"
+                placeholder="John Doe"
+                value={formData.name}
                 onChange={handleChange}
-                placeholder="Choose a username"
                 required
-                className="form-control"
               />
             </div>
           </div>
           
           <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <div className="input-container">
-              <i className="fas fa-envelope input-icon"></i>
+            <label className="form-label" htmlFor="email">Email</label>
+            <div className="form-input-container">
               <input
+                id="email"
                 type="email"
                 name="email"
+                className="form-input"
+                placeholder="youremail@example.com"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter your email"
                 required
-                className="form-control"
               />
             </div>
           </div>
           
           <div className="form-group">
-            <label className="form-label">Password</label>
-            <div className="input-container">
-              <i className="fas fa-lock input-icon"></i>
+            <label className="form-label" htmlFor="password">Password</label>
+            <div className="form-input-container">
               <input
-                type="password"
+                id="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
+                className="form-input"
+                placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Create a password"
                 required
-                className="form-control"
+                minLength="6"
               />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
             </div>
-            <small className="form-text text-muted">Must be at least 6 characters long</small>
           </div>
           
           <div className="form-group">
-            <label className="form-label">Confirm Password</label>
-            <div className="input-container">
-              <i className="fas fa-lock input-icon"></i>
+            <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
+            <div className="form-input-container">
               <input
-                type="password"
+                id="confirmPassword"
+                type={showPassword ? "text" : "password"}
                 name="confirmPassword"
+                className="form-input"
+                placeholder="••••••••"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirm your password"
                 required
-                className="form-control"
+                minLength="6"
               />
             </div>
           </div>
@@ -138,18 +139,16 @@ export const Register = () => {
             className="auth-button"
             disabled={loading}
           >
-            {loading ? <><i className="fas fa-spinner fa-spin"></i> Creating Account...</> : 'Create Account'}
+            {loading ? 'Creating account...' : 'Register'}
           </button>
         </form>
         
         <div className="auth-footer">
-          <p>Already have an account? <Link to="/login" className="auth-link">Log in</Link></p>
+          Already have an account?{" "}
+          <Link to="/" className="auth-link">
+            Login
+          </Link>
         </div>
-      </div>
-
-      <div className="auth-info">
-        <p className="developer-credit">Developed by <span className="developer-name">Micheal Shao</span></p>
-        <p className="copyright">&copy; {new Date().getFullYear()} Task Manager</p>
       </div>
     </div>
   );

@@ -28,10 +28,11 @@ export const Login = () => {
     setLoading(true);
     
     try {
-      await authAPI.login(formData);
-      navigate('/dashboard');
+      await authAPI.login({ email: formData.email, password: formData.password });
+      navigate('/todolist');
     } catch (err) {
-      setError(err.response?.data?.msg || 'Login failed. Please try again.');
+      setError(err.response?.data?.msg || 'Login failed, please check your credentials');
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
@@ -41,45 +42,49 @@ export const Login = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <div className="logo-container">
-            <i className="fas fa-tasks logo-icon"></i>
-          </div>
-          <h1 className="auth-title">Task Manager</h1>
-          <p className="auth-subtitle">Log in to manage your tasks efficiently</p>
+          <h1 className="auth-title">Login Account</h1>
+          <p className="auth-subtitle">Please enter your login information</p>
         </div>
         
         {error && <div className="auth-error">{error}</div>}
         
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <div className="input-container">
-              <i className="fas fa-envelope input-icon"></i>
+            <label className="form-label" htmlFor="email">Email</label>
+            <div className="form-input-container">
               <input
+                id="email"
                 type="email"
                 name="email"
+                className="form-input"
+                placeholder="youremail@example.com"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter your email"
                 required
-                className="form-control"
               />
             </div>
           </div>
           
           <div className="form-group">
-            <label className="form-label">Password</label>
-            <div className="input-container">
-              <i className="fas fa-lock input-icon"></i>
+            <label className="form-label" htmlFor="password">Password</label>
+            <div className="form-input-container">
               <input
-                type="password"
+                id="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
+                className="form-input"
+                placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Enter your password"
                 required
-                className="form-control"
               />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
             </div>
           </div>
           
@@ -100,18 +105,16 @@ export const Login = () => {
             className="auth-button"
             disabled={loading}
           >
-            {loading ? <><i className="fas fa-spinner fa-spin"></i> Logging in...</> : 'Log In'}
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
         
         <div className="auth-footer">
-          <p>Don't have an account? <Link to="/register" className="auth-link">Sign up</Link></p>
+          Don't have an account?{" "}
+          <Link to="/signup" className="auth-link">
+            Register
+          </Link>
         </div>
-      </div>
-
-      <div className="auth-info">
-        <p className="developer-credit">Developed by <span className="developer-name">Micheal Shao</span></p>
-        <p className="copyright">&copy; {new Date().getFullYear()} Task Manager</p>
       </div>
     </div>
   );
