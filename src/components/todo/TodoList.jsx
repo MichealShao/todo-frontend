@@ -154,6 +154,10 @@ function TodoList() {
     priority: ''
   }); // Filter state
 
+  // 添加防止重复操作的状态
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [disabledButtons, setDisabledButtons] = useState({});
+
   // Calendar related states
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -319,20 +323,40 @@ function TodoList() {
     }));
   };
 
+  // 添加按钮防抖函数
+  const debounceOperation = (operationId, callback, delay = 1000) => {
+    if (disabledButtons[operationId]) {
+      return; // 如果按钮已被禁用，直接返回
+    }
+    
+    // 设置按钮为禁用状态
+    setDisabledButtons(prev => ({ ...prev, [operationId]: true }));
+    
+    // 执行回调
+    callback();
+    
+    // 延迟后启用按钮
+    setTimeout(() => {
+      setDisabledButtons(prev => ({ ...prev, [operationId]: false }));
+    }, delay);
+  };
+
   // ---------------------------
   // 5. Add new task
   // ---------------------------
   const openAddModal = () => {
-    // Initialize form
-    setFormData({
-      priority: "Medium",
-      deadline: "",
-      hours: "",
-      details: "",
-      status: "Pending",
-      startTime: ""
+    debounceOperation('addTask', () => {
+      // Initialize form
+      setFormData({
+        priority: "Medium",
+        deadline: "",
+        hours: "",
+        details: "",
+        status: "Pending",
+        startTime: ""
+      });
+      setShowAddModal(true);
     });
-    setShowAddModal(true);
   };
   const closeAddModal = () => setShowAddModal(false);
 
@@ -340,45 +364,46 @@ function TodoList() {
   // 6. Edit task
   // ---------------------------
   const editTask = (task) => {
-    // Ensure date format is correct, convert to YYYY-MM-DD format
-    const formattedDeadline = task.deadline ? 
-      (typeof task.deadline === 'string' ? 
-        task.deadline.split('T')[0] : 
-        new Date(task.deadline).toISOString().split('T')[0]) : 
-      '';
+    const taskId = task.id || task._id;
+    debounceOperation(`editTask-${taskId}`, () => {
+      // Ensure date format is correct, convert to YYYY-MM-DD format
+      const formattedDeadline = task.deadline ? 
+        (typeof task.deadline === 'string' ? 
+          task.deadline.split('T')[0] : 
+          new Date(task.deadline).toISOString().split('T')[0]) : 
+        '';
+        
+      // Format start time if exists
+      const formattedStartTime = task.startTime ? 
+        (typeof task.startTime === 'string' ? 
+          task.startTime.split('T')[0] : 
+          new Date(task.startTime).toISOString().split('T')[0]) : 
+        '';
       
-    // Format start time if exists
-    const formattedStartTime = task.startTime ? 
-      (typeof task.startTime === 'string' ? 
-        task.startTime.split('T')[0] : 
-        new Date(task.startTime).toISOString().split('T')[0]) : 
-      '';
-    
-    // Ensure status is correctly set
-    console.log('Editing task, current status:', task.status);
-    // Confirm task ID format
-    const taskId = task.id || task._id; // Compatible with different ID field names
-    console.log('Editing task ID:', taskId);
-    
-    if (!taskId) {
-      console.error('Task missing ID field:', task);
-      setError('Cannot edit task: Missing task ID');
-      return;
-    }
-    
-    // Initialize form
-    setFormData({
-      priority: task.priority || 'Medium',
-      deadline: formattedDeadline,
-      hours: task.hours || '',
-      details: task.details || '',
-      status: task.status || 'Pending', // Ensure status value is correctly passed
-      startTime: formattedStartTime || '' // Include start time
+      console.log('Editing task, current status:', task.status);
+      console.log('Editing task ID:', taskId);
+      
+      if (!taskId) {
+        console.error('Task missing ID field:', task);
+        setError('Cannot edit task: Missing task ID');
+        return;
+      }
+      
+      // Initialize form
+      setFormData({
+        priority: task.priority || 'Medium',
+        deadline: formattedDeadline,
+        hours: task.hours || '',
+        details: task.details || '',
+        status: task.status || 'Pending',
+        startTime: formattedStartTime || ''
+      });
+      
+      setEditingTaskId(taskId);
+      setShowEditModal(true);
     });
-    
-    setEditingTaskId(taskId);
-    setShowEditModal(true);
   };
+  
   const closeEditModal = () => {
     setShowEditModal(false);
     setEditingTaskId(null);
@@ -388,9 +413,13 @@ function TodoList() {
   // 7. View task details
   // ---------------------------
   const viewTaskDetails = (task) => {
-    setViewingTask(task);
-    setShowViewModal(true);
+    const taskId = task.id || task._id;
+    debounceOperation(`viewTask-${taskId}`, () => {
+      setViewingTask(task);
+      setShowViewModal(true);
+    });
   };
+  
   const closeViewModal = () => {
     setShowViewModal(false);
     setViewingTask(null);
@@ -400,19 +429,24 @@ function TodoList() {
   // 8. Delete task
   // ---------------------------
   const deleteTask = (id) => {
-    // Ensure valid ID
-    if (!id) {
-      console.error('Attempted to delete task but ID is missing');
-      setError('Cannot delete task: Missing task ID');
-      return;
-    }
-    
-    console.log('Preparing to delete task ID:', id);
-    setDeleteTaskId(id);
-    setShowDeleteModal(true);
+    debounceOperation(`deleteTask-${id}`, () => {
+      // Ensure valid ID
+      if (!id) {
+        console.error('Attempted to delete task but ID is missing');
+        setError('Cannot delete task: Missing task ID');
+        return;
+      }
+      
+      console.log('Preparing to delete task ID:', id);
+      setDeleteTaskId(id);
+      setShowDeleteModal(true);
+    });
   };
 
   const confirmDelete = async () => {
+    if (isProcessing) return; // 如果正在处理中，直接返回
+    
+    setIsProcessing(true);
     console.log('Preparing to delete task ID:', deleteTaskId);
     
     try {
@@ -431,6 +465,7 @@ function TodoList() {
     } finally {
       setShowDeleteModal(false);
       setDeleteTaskId(null);
+      setTimeout(() => setIsProcessing(false), 500); // 延迟恢复状态
     }
   };
 
@@ -444,11 +479,15 @@ function TodoList() {
   // ---------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isProcessing) return; // 如果正在处理中，直接返回
+    setIsProcessing(true);
     setError(null);
     
     // Validate form data
     if (!formData.details || formData.details.trim() === '') {
       setError('Task details cannot be empty');
+      setIsProcessing(false);
       return;
     }
     
@@ -456,12 +495,14 @@ function TodoList() {
     const currentDateStr = new Date().toISOString().split('T')[0];
     if (formData.deadline < currentDateStr) {
       setError('Deadline cannot be before today. Please select today or a future date.');
+      setIsProcessing(false);
       return;
     }
     
     // Validate deadline is not before start time
     if (formData.startTime && formData.deadline && formData.deadline < formData.startTime) {
       setError('Deadline cannot be earlier than Start Time. Please adjust the dates.');
+      setIsProcessing(false);
       return;
     }
 
@@ -474,11 +515,12 @@ function TodoList() {
       startTime: formData.startTime
     };
 
-    if (showEditModal) {
-      // Edit mode
-      try {
+    try {
+      if (showEditModal) {
+        // Edit mode
         if (!editingTaskId) {
           setError('Task ID is missing. Please refresh and try again.');
+          setIsProcessing(false);
           return;
         }
         
@@ -500,13 +542,8 @@ function TodoList() {
         });
         
         closeEditModal();
-      } catch (err) {
-        console.error('Failed to update task:', err);
-        setError('Failed to update task. Please try again.');
-      }
-    } else {
-      // Add mode
-      try {
+      } else {
+        // Add mode
         const taskWithCreatedAt = {
           ...taskData,
           createdAt: new Date().toISOString()
@@ -523,10 +560,12 @@ function TodoList() {
         }]);
         
         closeAddModal();
-      } catch (err) {
-        console.error('Failed to create task:', err);
-        setError('Failed to create task. Please try again.');
       }
+    } catch (err) {
+      console.error('Failed to process task:', err);
+      setError(showEditModal ? 'Failed to update task. Please try again.' : 'Failed to create task. Please try again.');
+    } finally {
+      setTimeout(() => setIsProcessing(false), 500); // 延迟恢复状态
     }
   };
 
@@ -797,6 +836,7 @@ function TodoList() {
             <button
               onClick={openAddModal}
               className="btn btn-success d-flex align-items-center gap-2"
+              disabled={disabledButtons['addTask']}
             >
               <i className="fas fa-plus"></i>
               <span className="d-none d-sm-inline">Add New Task</span>
@@ -931,13 +971,13 @@ function TodoList() {
                           </div>
                         </div>
                         <div className="date-task-actions d-flex align-items-center">
-                          <button onClick={() => viewTaskDetails(task)} className="date-task-button" title="View details">
+                          <button onClick={() => viewTaskDetails(task)} className="date-task-button" title="View details" disabled={disabledButtons[`viewTask-${task.id || task._id}`]}>
                             <i className="fas fa-eye"></i>
                           </button>
-                          <button onClick={() => editTask(task)} className="date-task-button" title="Edit task">
+                          <button onClick={() => editTask(task)} className="date-task-button" title="Edit task" disabled={disabledButtons[`editTask-${task.id || task._id}`]}>
                             <i className="fas fa-edit"></i>
                           </button>
-                          <button onClick={() => deleteTask(task.id || task._id)} className="date-task-button" title="Delete task">
+                          <button onClick={() => deleteTask(task.id || task._id)} className="date-task-button" title="Delete task" disabled={disabledButtons[`deleteTask-${task.id || task._id}`]}>
                             <i className="fas fa-trash"></i>
                           </button>
                         </div>
@@ -1059,6 +1099,7 @@ function TodoList() {
                                   onClick={() => viewTaskDetails(task)}
                                   className="btn btn-sm btn-outline-primary"
                                   title="View details"
+                                  disabled={disabledButtons[`viewTask-${task.id || task._id}`]}
                                 >
                                   <i className="fas fa-eye"></i> <span className="d-none d-md-inline">View</span>
                                 </button>
@@ -1066,6 +1107,7 @@ function TodoList() {
                                   onClick={() => editTask(task)}
                                   className="btn btn-sm btn-outline-secondary"
                                   title="Edit task"
+                                  disabled={disabledButtons[`editTask-${task.id || task._id}`]}
                                 >
                                   <i className="fas fa-edit"></i> <span className="d-none d-md-inline">Update</span>
                                 </button>
@@ -1073,6 +1115,7 @@ function TodoList() {
                                   onClick={() => deleteTask(task.id || task._id)}
                                   className="btn btn-sm btn-outline-danger"
                                   title="Delete task"
+                                  disabled={disabledButtons[`deleteTask-${task.id || task._id}`]}
                                 >
                                   <i className="fas fa-trash"></i> <span className="d-none d-md-inline">Delete</span>
                                 </button>
@@ -1266,8 +1309,10 @@ function TodoList() {
                     >
                       Cancel
                     </button>
-                    <button type="submit" className="btn btn-primary">
-                      {showEditModal ? "Save Changes" : "Add Task"}
+                    <button type="submit" className="btn btn-primary" disabled={isProcessing}>
+                      {isProcessing ? 
+                        (showEditModal ? 'Saving...' : 'Adding...') : 
+                        (showEditModal ? 'Save Changes' : 'Add Task')}
                     </button>
                   </div>
                 </form>
@@ -1403,8 +1448,8 @@ function TodoList() {
                 <button onClick={cancelDelete} className="btn btn-secondary">
                   Cancel
                 </button>
-                <button onClick={confirmDelete} className="btn btn-danger">
-                  Delete
+                <button onClick={confirmDelete} className="btn btn-danger" disabled={isProcessing}>
+                  {isProcessing ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </div>
