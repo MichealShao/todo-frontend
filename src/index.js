@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom/client';
 // 导入Bootstrap CSS
 import 'bootstrap/dist/css/bootstrap.min.css';
 // 导入Bootstrap JS bundle
@@ -10,7 +10,6 @@ import './styles/Auth.css';
 import './styles/common.css';
 import './styles/TodoList.css';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
 
 // 添加Font Awesome CSS
 const link = document.createElement('link');
@@ -21,14 +20,9 @@ link.crossOrigin = 'anonymous';
 link.referrerPolicy = 'no-referrer';
 document.head.appendChild(link);
 
-ReactDOM.render(
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
-  document.getElementById('root')
+  </React.StrictMode>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();

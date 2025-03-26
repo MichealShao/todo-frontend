@@ -1,6 +1,7 @@
 // src/App.js
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Outlet } from "react-router-dom";
+import './App.css';
 
 import { Login } from './components/auth/Login';
 import { SignUp } from './components/auth/SignUp';
