@@ -1,70 +1,116 @@
-# Getting Started with Create React App
+# Todo App Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, responsive task management application built with React.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **User Authentication**: Secure login and registration system
+- **Task Management**: Create, read, update, and delete tasks
+- **Task Prioritization**: Assign high, medium, or low priority to tasks
+- **Deadline Tracking**: Set and monitor task deadlines
+- **Filtering & Sorting**: Sort tasks by priority or deadline, and filter by status
+- **Calendar View**: Visual representation of tasks by deadline date
+- **Responsive Design**: Works on desktop and mobile devices
 
-### `npm start`
+## Technologies
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- React
+- React Router for navigation
+- CSS for styling (with responsive design)
+- Axios for API communication
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Getting Started
 
-### `npm test`
+### Prerequisites
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Node.js (v14 or later)
+- npm or yarn
 
-### `npm run build`
+### Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Clone the repository
+   ```
+   git clone https://github.com/yourusername/todo-frontend.git
+   cd todo-frontend
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+2. Install dependencies
+   ```
+   npm install
+   ```
+   or
+   ```
+   yarn install
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+3. Start the development server
+   ```
+   npm start
+   ```
+   or
+   ```
+   yarn start
+   ```
 
-### `npm run eject`
+4. Open your browser and navigate to `http://localhost:3000`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Project Structure
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```
+src/
+├── components/
+│   ├── auth/          # Authentication components
+│   │   ├── Login.jsx
+│   │   └── SignUp.jsx
+│   └── todo/          # Todo management components
+│       └── TodoList.jsx
+├── services/
+│   └── api.js         # API service for backend communication
+├── styles/            # CSS files
+│   ├── Auth.css
+│   ├── common.css
+│   └── TodoList.css
+├── App.js             # Main application component
+└── index.js           # Application entry point
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Usage
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Authentication
 
-## Learn More
+- **Registration**: Create a new account with name, email, and password
+- **Login**: Access your account with email and password
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Task Management
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- **Add Task**: Create new tasks with priority, deadline, and details
+- **View Tasks**: See all tasks in a sortable table view
+- **Edit Task**: Modify task details, priority, or deadline
+- **Delete Task**: Remove tasks with confirmation
+- **Calendar View**: Toggle to view tasks by deadline date
 
-### Code Splitting
+## API Integration
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+The application is designed to connect to a backend API. By default, it connects to `http://localhost:5001`. You can change the API endpoint in `src/services/api.js`.
 
-### Analyzing the Bundle Size
+## Customization
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- **Colors**: Update theme colors in the CSS files
+- **API Endpoint**: Configure the backend URL in `src/services/api.js`
 
-### Making a Progressive Web App
+## Contributing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### Advanced Configuration
+## License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### Deployment
+## Acknowledgments
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- FontAwesome for icons
+- React and React Router for the framework

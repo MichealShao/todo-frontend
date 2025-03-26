@@ -1,0 +1,1248 @@
+/* TodoList Component Styles */
+.todo-app {
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  z-index: 50;
+}
+
+.header-content {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Header Button Container */
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.app-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* Stat Item Styles in Top Bar */
+.header-actions .stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-right: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.header-actions .stat-icon {
+  font-size: 1.1rem;
+  color: #14b8a6;
+}
+
+.header-actions .stat-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.header-actions .stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.1rem;
+}
+
+.header-actions .stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.add-button {
+  background-color: #14b8a6;
+  color: white;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 0.25rem;
+  border: none;
+  transition: background-color 0.2s;
+}
+
+.add-button:hover {
+  background-color: #0d9488;
+}
+
+/* Logout Button */
+.logout-button {
+  background-color: #ef4444;
+  color: white;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 0.25rem;
+  border: none;
+  transition: background-color 0.2s;
+}
+
+.logout-button:hover {
+  background-color: #dc2626;
+}
+
+.main-content {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 6rem 1rem 2rem;
+}
+
+.task-table-container {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+.task-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.task-table th {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.task-table th.sortable {
+  cursor: pointer;
+  position: relative;
+  padding-right: 24px;
+}
+
+.task-table th.sortable i {
+  margin-left: 5px;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.task-table td {
+  padding: 1rem 1.5rem;
+  font-size: 0.875rem;
+}
+
+.task-row {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s;
+}
+
+.task-row:hover {
+  background-color: #f9fafb;
+}
+
+.task-row-high {
+  border-left: 4px solid #dc2626;
+}
+
+.task-row-medium {
+  border-left: 4px solid #d97706;
+}
+
+.task-row-low {
+  border-left: 4px solid #059669;
+}
+
+/* Completed and Expired Task Styles */
+.task-row-inactive {
+  opacity: 0.7;
+  background-color: #f1f1f1 !important;
+}
+
+.task-row-inactive:hover {
+  background-color: #e9e9e9 !important;
+}
+
+.task-row-inactive td {
+  color: #666 !important;
+}
+
+.task-row-inactive .task-details,
+.task-row-inactive .task-deadline,
+.task-row-inactive .task-hours,
+.task-row-inactive .task-id {
+  color: #666;
+}
+
+.task-row-inactive .action-button {
+  opacity: 0.7;
+}
+
+.task-row-inactive .action-button:hover {
+  opacity: 1;
+}
+
+/* Ensure priority border is still visible when task is grayed out */
+.task-row-inactive.task-row-high {
+  border-left: 4px solid rgba(220, 38, 38, 0.7);
+}
+
+.task-row-inactive.task-row-medium {
+  border-left: 4px solid rgba(217, 119, 6, 0.7);
+}
+
+.task-row-inactive.task-row-low {
+  border-left: 4px solid rgba(5, 150, 105, 0.7);
+}
+
+/* Priority Badge Styles */
+.priority-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.priority-high {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.priority-medium {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.priority-low {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+/* Status Badge Styles */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-pending {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.status-completed {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.status-expired {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.status-in-progress {
+  background-color: #ddd6fe;
+  color: #7c3aed;
+}
+
+.task-id {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.task-deadline, .task-hours {
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.task-details {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.action-button {
+  background: none;
+  border: none;
+  color: #4b5563;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+}
+
+.edit-button:hover {
+  color: #0d9488;
+  background-color: rgba(13, 148, 136, 0.1);
+}
+
+.delete-button:hover {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 28rem;
+  overflow: hidden;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.form-select-container {
+  position: relative;
+}
+
+.form-select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  appearance: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.select-arrow {
+  position: absolute;
+  right: 0.75rem;
+  top: 0.75rem;
+  color: #9ca3af;
+}
+
+.form-input, .form-textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+/* Read-only Form Styles */
+.form-input[readonly], .form-textarea[readonly] {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+  color: #4b5563;
+  cursor: default;
+}
+
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+/* Disable textarea resize */
+.form-textarea[readonly] {
+  resize: none;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.cancel-button {
+  padding: 0.5rem 1rem;
+  color: #4b5563;
+  background-color: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.cancel-button:hover {
+  background-color: #f3f4f6;
+}
+
+.submit-button {
+  padding: 0.5rem 1rem;
+  background-color: #14b8a6;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.submit-button:hover {
+  background-color: #0d9488;
+}
+
+/* Delete Confirmation Modal */
+.delete-modal-message {
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.delete-countdown {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.delete-button-confirm {
+  padding: 0.5rem 1rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.delete-button-confirm:hover {
+  background-color: #dc2626;
+}
+
+/* Pagination Controls Styles */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1.5rem;
+  gap: 0.5rem;
+}
+
+.pagination-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  min-width: 2rem;
+  padding: 0 0.5rem;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  color: #4b5563;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-button:hover {
+  background-color: #f9fafb;
+}
+
+.pagination-button:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.pagination-button.active {
+  background-color: #14b8a6;
+  border-color: #14b8a6;
+  color: white;
+}
+
+.pagination-info {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0 0.5rem;
+}
+
+/* View Button Styles */
+.view-button:hover {
+  color: #2563eb;
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+/* Detail View Dialog */
+.detail-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 0.75rem 1.5rem;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #4b5563;
+  text-align: right;
+}
+
+.detail-value {
+  color: #1f2937;
+}
+
+/* Remove arrows from number inputs */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #14b8a6;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error Message */
+.error-message {
+  background-color: #fee2e2;
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+  text-align: center;
+  color: #6b7280;
+}
+
+/* Search and Filter Controls Container */
+.search-filter-bar {
+  margin-bottom: 1.5rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Calendar Toggle Button */
+.calendar-toggle {
+  margin-left: 2rem;
+}
+
+/* Calendar Button */
+.calendar-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.375rem;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 38px;
+  white-space: nowrap;
+  min-width: 180px;
+  max-width: 400px;
+  justify-content: center;
+}
+
+/* Calendar Container */
+.calendar-container-wrapper {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Selected Date Tasks */
+.selected-date-tasks {
+  border-top: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.selected-date-tasks h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.no-tasks {
+  color: #6b7280;
+  font-style: italic;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/* Custom Scrollbar */
+.date-tasks-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.date-tasks-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.date-tasks-list::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+
+.date-tasks-list::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* 统计信息行 */
+.search-stats-row {
+  display: flex;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.stats-container {
+  display: flex;
+  gap: 2rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stat-icon {
+  font-size: 1.25rem;
+  color: #14b8a6;
+  background-color: rgba(20, 184, 166, 0.1);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* 搜索和筛选控件布局 */
+.search-controls {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0.75rem;
+}
+
+.controls-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.search-control-row {
+  width: 100%;
+}
+
+.calendar-control-row {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+/* 搜索输入框样式 */
+.search-input-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.6rem 1rem 0.6rem 2.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.2s;
+  background-color: white;
+}
+
+.search-input:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+/* 筛选控件样式 */
+.filter-select-container {
+  position: relative;
+  width: 140px;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 0.6rem 1rem 0.6rem 2.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  appearance: none;
+  outline: none;
+  transition: all 0.2s;
+  background-color: white;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+}
+
+.filter-icon {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+/* 重置按钮样式 */
+.reset-button {
+  background-color: white;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+  padding: 0.6rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+  height: 38px;
+}
+
+.reset-button:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.reset-button i {
+  font-size: 0.85rem;
+}
+
+/* 响应式调整 */
+@media (min-width: 768px) {
+  .search-controls {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  
+  .search-control-row, .calendar-control-row {
+    width: auto;
+    margin-bottom: 0;
+  }
+  
+  .filter-group {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-input-container {
+    max-width: 100%;
+  }
+  
+  .calendar-button {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .filter-group {
+    width: 100%;
+  }
+}
+
+/* 日历切换按钮 */
+.calendar-toggle {
+  margin-left: 2rem;
+}
+
+/* 日历按钮 */
+.calendar-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.375rem;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 38px;
+  white-space: nowrap;
+  min-width: 180px;
+  max-width: 400px;
+  justify-content: center;
+}
+
+.calendar-button:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.calendar-button.active {
+  background-color: #14b8a6;
+  border-color: #14b8a6;
+  color: white;
+}
+
+.calendar-button i {
+  font-size: 1rem;
+}
+
+/* 日历容器 */
+.calendar-container-wrapper {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.calendar-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calendar-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.close-calendar {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-calendar:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.calendar-body {
+  padding: 0.75rem;
+}
+
+/* 日历组件样式 */
+.calendar-container {
+  width: 100%;
+  max-width: 100%;
+}
+
+.calendar-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.month-nav-button {
+  background: #f3f4f6;
+  border: none;
+  color: #4b5563;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.month-nav-button:hover {
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+.current-month {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.2rem;
+}
+
+.calendar-day-header {
+  text-align: center;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 0.25rem 0;
+  font-size: 0.75rem;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0.25rem;
+  min-height: 2rem;
+}
+
+.calendar-day:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.empty-day {
+  background-color: #f9fafb;
+  cursor: default;
+}
+
+.empty-day:hover {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+.today {
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.selected {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.day-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.deadline-dot {
+  position: absolute;
+  bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+}
+
+/* 选中日期的任务列表 */
+.selected-date-tasks {
+  border-top: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.selected-date-tasks h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.date-tasks-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 350px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.date-task-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+  border-left: 3px solid #e5e7eb;
+  gap: 0.5rem;
+}
+
+.date-task-item[data-priority="high"] {
+  border-left-color: #dc2626;
+}
+
+.date-task-item[data-priority="medium"] {
+  border-left-color: #d97706;
+}
+
+.date-task-item[data-priority="low"] {
+  border-left-color: #059669;
+}
+
+.date-task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.date-task-details {
+  flex: 1;
+}
+
+.date-task-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.date-task-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* 为小时数添加专门的样式 */
+.task-hours {
+  font-size: 0.875rem;
+  color: #1f2937;
+  text-align: center;
+}
+
+/* 使表格中的小时数居中显示 */
+.task-table td.task-hours {
+  text-align: center;
+}
+
+/* Actions列的表头样式 */
+.task-table th.actions-header {
+  text-align: center;
+  padding-right: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.date-task-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.date-task-button {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+}
+
+.date-task-button:hover:nth-child(1) {
+  background-color: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+}
+
+.date-task-button:hover:nth-child(2) {
+  background-color: rgba(13, 148, 136, 0.1);
+  color: #0d9488;
+}
+
+.date-task-button:hover:nth-child(3) {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .search-stats-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .calendar-toggle {
+    margin-left: 0;
+  }
+  
+  .calendar-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .calendar-day {
+    font-size: 0.75rem;
+    min-height: 2rem;
+    padding: 0.25rem;
+  }
+  
+  .deadline-dot {
+    width: 1rem;
+    height: 1rem;
+    font-size: 0.6rem;
+  }
+  
+  .date-task-title {
+    max-width: 180px;
+  }
+} 
