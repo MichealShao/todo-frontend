@@ -346,13 +346,13 @@ function TodoList() {
   // ---------------------------
   const openAddModal = () => {
     debounceOperation('addTask', () => {
-      // Initialize form
+      // Initialize form - status fixed as Pending for new tasks
       setFormData({
         priority: "Medium",
         deadline: "",
         hours: "",
         details: "",
-        status: "Pending",
+        status: "Pending", // Fixed as Pending for new tasks
         startTime: ""
       });
       setShowAddModal(true);
@@ -1226,11 +1226,17 @@ function TodoList() {
                         })
                       }
                       className="form-select"
+                      disabled={showAddModal} // Disable status selection for new tasks
                     >
                       <option value="Pending">Pending</option>
                       <option value="In Progress">In Progress</option>
                       <option value="Completed">Completed</option>
                     </select>
+                    {showAddModal && (
+                      <small className="form-text text-muted">
+                        New tasks must be created with Pending status. You can update the status after creation.
+                      </small>
+                    )}
                     {showEditModal && formData.status === 'Expired' && (
                       <small className="form-text text-muted">
                         The "Expired" status is automatically assigned by the system when a deadline has passed.
@@ -1270,7 +1276,7 @@ function TodoList() {
                       }
                       className="form-control"
                       required
-                      min={formData.status === 'In Progress' && formData.startTime ? formData.startTime : new Date().toISOString().split('T')[0]}
+                      min={new Date().toISOString().split('T')[0]} // Can't select dates before today
                     />
                   </div>
                   <div className="mb-3">
