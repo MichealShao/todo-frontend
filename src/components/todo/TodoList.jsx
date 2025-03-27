@@ -345,15 +345,27 @@ function TodoList() {
     }, delay);
   };
 
+  // 获取今天的日期，使用本地时区而非UTC
+  const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // ---------------------------
   // 5. Add new task
   // ---------------------------
   const openAddModal = () => {
     debounceOperation('addTask', () => {
+      // 使用本地日期格式
+      const todayDateStr = getTodayDateString();
+      
       // Initialize form - status fixed as Pending for new tasks
       setFormData({
         priority: "Medium",
-        deadline: "",
+        deadline: todayDateStr, // 设置默认值为今天
         hours: "",
         details: "",
         status: "Pending", // Fixed as Pending for new tasks
@@ -495,10 +507,8 @@ function TodoList() {
       return;
     }
     
-    // Get today's date in YYYY-MM-DD format for comparison
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const currentDateStr = today.toISOString().split('T')[0];
+    // 使用本地时区获取今天的日期字符串
+    const currentDateStr = getTodayDateString();
     
     // For new tasks, validate deadline is not before current date
     if (formData.deadline < currentDateStr) {
@@ -683,9 +693,12 @@ function TodoList() {
   const filteredAndSortedTasks = useMemo(() => {
     if (!tasks || tasks.length === 0) return [];
     
-    // Current date for detecting expired tasks - set to start of today
+    // 使用本地时区获取今天的日期，而不是UTC
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0); // Set to start of day
+    
+    // 获取今天日期的字符串表示，用于比较
+    const todayStr = getTodayDateString();
     
     // First copy the array to avoid direct modification of the original
     return [...tasks]
@@ -698,13 +711,9 @@ function TodoList() {
         if (task.status !== 'Completed') {
           if (!task.deadline) return taskCopy;
           
-          // Parse the deadline properly
-          const deadlineDate = new Date(task.deadline);
-          deadlineDate.setHours(0, 0, 0, 0); // Set to start of day
-          
-          // Compare dates - deadline should be STRICTLY BEFORE current date to be expired
-          // This ensures that tasks due today are not marked as expired
-          if (deadlineDate < currentDate) {
+          // 直接比较日期字符串，避免时区问题
+          // 只有当deadline严格小于今天的日期时，才标记为过期
+          if (task.deadline < todayStr) {
             taskCopy.status = 'Expired';
           }
         }
@@ -773,7 +782,7 @@ function TodoList() {
     
     // Filter tasks due today that are not completed/expired
     return tasks.filter(task => {
-      const deadlineDate = task.deadline?.split('T')[0] || '';
+      const deadlineDate = task.deadline?.split('T')[0];
       return deadlineDate === today && task.status !== 'Completed' && task.status !== 'Expired';
     }).length;
   }, [tasks]);
@@ -1281,8 +1290,8 @@ function TodoList() {
                       className="form-control"
                       disabled={formData.status === 'Pending'}
                       required={formData.status === 'In Progress'}
-                      // 如果有deadline，则start time不能晚于deadline；否则不能早于今天
-                      min={new Date().toISOString().split('T')[0]}
+                      // 使用本地时区获取今天的日期
+                      min={getTodayDateString()}
                       max={formData.deadline || undefined}
                     />
                     {formData.status === 'Pending' && (
@@ -1331,8 +1340,8 @@ function TodoList() {
                       }}
                       className="form-control"
                       required
-                      // 如果有start time，则deadline不能早于start time；否则不能早于今天
-                      min={formData.startTime || new Date().toISOString().split('T')[0]}
+                      // 使用本地时区获取今天的日期
+                      min={formData.startTime || getTodayDateString()}
                     />
                     <small className="form-text text-muted">
                       {formData.startTime 
