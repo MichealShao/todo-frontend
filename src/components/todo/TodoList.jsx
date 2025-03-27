@@ -269,7 +269,11 @@ function TodoList() {
   // ---------------------------
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
+    
+    // Handle date strings correctly
     const date = new Date(dateStr);
+    
+    // Use safe date formatting
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -491,8 +495,12 @@ function TodoList() {
       return;
     }
     
+    // Get today's date in YYYY-MM-DD format for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentDateStr = today.toISOString().split('T')[0];
+    
     // For new tasks, validate deadline is not before current date
-    const currentDateStr = new Date().toISOString().split('T')[0];
     if (formData.deadline < currentDateStr) {
       setError('Deadline cannot be before today. Please select today or a future date.');
       setIsProcessing(false);
@@ -509,10 +517,10 @@ function TodoList() {
     const taskData = {
       ...formData,
       priority: formData.priority || 'Medium',
-      deadline: formData.deadline || new Date().toISOString().split('T')[0],
+      deadline: formData.deadline || currentDateStr,
       hours: formData.hours ? parseInt(formData.hours, 10) : 1,
       status: formData.status || 'Pending',
-      startTime: formData.startTime
+      startTime: formData.startTime || null
     };
 
     try {
@@ -675,7 +683,7 @@ function TodoList() {
   const filteredAndSortedTasks = useMemo(() => {
     if (!tasks || tasks.length === 0) return [];
     
-    // Current date for detecting expired tasks
+    // Current date for detecting expired tasks - set to start of today
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0); // Set to start of day
     
@@ -688,9 +696,15 @@ function TodoList() {
         
         // Check if task is expired - for display purposes only, not persisted
         if (task.status !== 'Completed') {
-          const deadline = new Date(task.deadline);
-          deadline.setHours(0, 0, 0, 0); // Set to start of day
-          if (deadline < currentDate) {
+          if (!task.deadline) return taskCopy;
+          
+          // Parse the deadline properly
+          const deadlineDate = new Date(task.deadline);
+          deadlineDate.setHours(0, 0, 0, 0); // Set to start of day
+          
+          // Compare dates - deadline should be STRICTLY BEFORE current date to be expired
+          // This ensures that tasks due today are not marked as expired
+          if (deadlineDate < currentDate) {
             taskCopy.status = 'Expired';
           }
         }
@@ -1250,17 +1264,37 @@ function TodoList() {
                     <input
                       type="date"
                       value={formData.startTime}
-                      onChange={(e) =>
-                        setFormData({ ...formData, startTime: e.target.value })
-                      }
+                      onChange={(e) => {
+                        // 当Start Time改变时可能需要调整Deadline
+                        const newStartTime = e.target.value;
+                        if (newStartTime && formData.deadline && newStartTime > formData.deadline) {
+                          // 如果新的开始时间晚于截止日期，则更新截止日期为开始时间
+                          setFormData({ 
+                            ...formData, 
+                            startTime: newStartTime, 
+                            deadline: newStartTime 
+                          });
+                        } else {
+                          setFormData({ ...formData, startTime: newStartTime });
+                        }
+                      }}
                       className="form-control"
                       disabled={formData.status === 'Pending'}
                       required={formData.status === 'In Progress'}
-                      min={new Date().toISOString().split('T')[0]} // Can't select dates before today
+                      // 如果有deadline，则start time不能晚于deadline；否则不能早于今天
+                      min={new Date().toISOString().split('T')[0]}
+                      max={formData.deadline || undefined}
                     />
                     {formData.status === 'Pending' && (
                       <small className="form-text text-muted">
                         Start time can only be set when task is In Progress or Completed.
+                      </small>
+                    )}
+                    {formData.status !== 'Pending' && (
+                      <small className="form-text text-muted">
+                        {formData.deadline 
+                          ? "Start time cannot be later than the deadline." 
+                          : "Start time must be today or a future date."}
                       </small>
                     )}
                   </div>
@@ -1271,13 +1305,40 @@ function TodoList() {
                     <input
                       type="date"
                       value={formData.deadline}
-                      onChange={(e) =>
-                        setFormData({ ...formData, deadline: e.target.value })
-                      }
+                      onChange={(e) => {
+                        // 当Deadline改变时可能需要调整Start Time
+                        const newDeadline = e.target.value;
+                        if (formData.startTime && formData.startTime > newDeadline) {
+                          // 如果开始时间晚于新的截止日期，则清除开始时间
+                          if (formData.status === 'In Progress' || formData.status === 'Completed') {
+                            // 如果状态需要开始时间，则设置开始时间为截止日期
+                            setFormData({ 
+                              ...formData, 
+                              deadline: newDeadline, 
+                              startTime: newDeadline 
+                            });
+                          } else {
+                            // 否则清除开始时间
+                            setFormData({ 
+                              ...formData, 
+                              deadline: newDeadline, 
+                              startTime: '' 
+                            });
+                          }
+                        } else {
+                          setFormData({ ...formData, deadline: newDeadline });
+                        }
+                      }}
                       className="form-control"
                       required
-                      min={new Date().toISOString().split('T')[0]} // Can't select dates before today
+                      // 如果有start time，则deadline不能早于start time；否则不能早于今天
+                      min={formData.startTime || new Date().toISOString().split('T')[0]}
                     />
+                    <small className="form-text text-muted">
+                      {formData.startTime 
+                        ? "Deadline must be on or after the start time." 
+                        : "Deadline must be today or a future date."}
+                    </small>
                   </div>
                   <div className="mb-3">
                     <label className="form-label">
