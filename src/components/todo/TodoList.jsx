@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import '../../styles/TodoList.css';
 import { tasksAPI, authAPI } from "../../services/api";
+import axios from "axios";
 
 /**
  * This is a TodoList component with:
@@ -239,6 +240,11 @@ function TodoList() {
       // Update pagination info
       if (response.pagination) {
         setPagination(response.pagination);
+      }
+
+      // 如果有当前的排序设置，应用前端排序
+      if (sortOptions.sortField) {
+        handleSort(sortOptions.sortField);
       }
     } catch (err) {
       console.error('Failed to fetch tasks:', err.response?.data || err.message || err);
@@ -480,7 +486,7 @@ function TodoList() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (isProcessing) return; // 如果正在处理中，直接返回
+    if (isProcessing) return; 
     setIsProcessing(true);
     setError(null);
     
@@ -814,6 +820,69 @@ function TodoList() {
   const closeCalendarAndReset = () => {
     setShowCalendar(false);
     setSelectedDate(null);
+  };
+
+  // 排序逻辑
+  const handleSort = (field) => {
+    setIsProcessing(true);
+    
+    // 保存当前任务列表的备份，以便在前端进行排序
+    const tasksCopy = [...tasks];
+    
+    // 如果点击了当前排序字段，则反转排序方向
+    const newSortDirection = field === sortOptions.sortField && sortOptions.sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortOptions({
+      sortField: field,
+      sortDirection: newSortDirection
+    });
+
+    // 前端排序函数
+    const sortedTasks = tasksCopy.sort((a, b) => {
+      // 根据不同字段使用不同的排序逻辑
+      if (field === 'priority') {
+        // 对优先级进行排序：High > Medium > Low
+        const priorityOrder = { High: 3, Medium: 2, Low: 1 };
+        const valueA = priorityOrder[a.priority] || 0;
+        const valueB = priorityOrder[b.priority] || 0;
+        return newSortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+      } 
+      else if (field === 'deadline' || field === 'startTime') {
+        // 日期排序
+        const dateA = a[field] ? new Date(a[field]) : new Date(0);
+        const dateB = b[field] ? new Date(b[field]) : new Date(0);
+        return newSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      else if (field === 'status') {
+        // 状态排序：Pending > In Progress > Completed
+        const statusOrder = { 'Pending': 1, 'In Progress': 2, 'Completed': 3 };
+        const valueA = statusOrder[a.status] || 0;
+        const valueB = statusOrder[b.status] || 0;
+        return newSortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+      }
+      else {
+        // 默认的字符串/数字排序
+        const valueA = a[field];
+        const valueB = b[field];
+        
+        if (typeof valueA === 'number' && typeof valueB === 'number') {
+          return newSortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+        }
+        
+        // 字符串排序
+        const strA = String(valueA).toLowerCase();
+        const strB = String(valueB).toLowerCase();
+        
+        if (newSortDirection === 'asc') {
+          return strA.localeCompare(strB);
+        } else {
+          return strB.localeCompare(strA);
+        }
+      }
+    });
+    
+    // 更新任务列表状态
+    setTasks(sortedTasks);
+    setIsProcessing(false);
   };
 
   // ---------------------------

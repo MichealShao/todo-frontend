@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../styles/Auth.css";
 import { authAPI } from "../../services/api";
+import axios from "axios";
 
 export const Login = () => {
   const [formData, setFormData] = useState({
@@ -24,15 +25,28 @@ export const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setError('');
     setLoading(true);
     
     try {
-      await authAPI.login({ email: formData.email, password: formData.password });
+      const response = await axios.post(`${API_URL}/auth/login`, { username: formData.email, password: formData.password });
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
       navigate('/todolist');
     } catch (err) {
-      setError(err.response?.data?.msg || 'Login failed, please check your credentials');
-      console.error('Login error:', err);
+      console.error('Login failed:', err);
+      // 根据错误响应区分不同类型的错误
+      if (err.response) {
+        if (err.response.status === 404) {
+          setError('Account does not exist. Please check your username.');
+        } else if (err.response.status === 401) {
+          setError('Incorrect password. Please try again.');
+        } else {
+          setError('Login failed. Please try again later.');
+        }
+      } else {
+        setError('Connection error. Please check your internet connection.');
+      }
     } finally {
       setLoading(false);
     }
