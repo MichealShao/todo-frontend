@@ -1303,33 +1303,25 @@ function TodoList() {
                       type="date"
                       value={formData.startTime}
                       onChange={(e) => {
-                        // 只有当状态不是Pending时才更新开始时间
-                        if (formData.status !== 'Pending') {
-                          const newStartTime = e.target.value;
-                          if (newStartTime && formData.deadline && newStartTime > formData.deadline) {
-                            // 如果新的开始时间晚于截止日期，则更新截止日期为开始时间
-                            setFormData({ 
-                              ...formData, 
-                              startTime: newStartTime, 
-                              deadline: newStartTime 
-                            });
-                          } else {
-                            setFormData({ ...formData, startTime: newStartTime });
-                          }
+                        // 当Start Time改变时可能需要调整Deadline
+                        const newStartTime = e.target.value;
+                        if (newStartTime && formData.deadline && newStartTime > formData.deadline) {
+                          // 如果新的开始时间晚于截止日期，则更新截止日期为开始时间
+                          setFormData({ 
+                            ...formData, 
+                            startTime: newStartTime, 
+                            deadline: newStartTime 
+                          });
+                        } else {
+                          setFormData({ ...formData, startTime: newStartTime });
                         }
                       }}
                       className="form-control"
+                      disabled={formData.status === 'Pending'}
                       required={formData.status === 'In Progress'}
                       // 使用本地时区获取今天的日期
                       min={getTodayDateString()}
                       max={formData.deadline || undefined}
-                      style={{
-                        color: '#212529', 
-                        fontWeight: '400',
-                        opacity: '1',
-                        backgroundColor: formData.status === 'Pending' ? '#f8f9fa' : 'white',
-                        pointerEvents: formData.status === 'Pending' ? 'none' : 'auto'
-                      }}
                     />
                     {formData.status === 'Pending' && (
                       <small className="form-text text-muted">
