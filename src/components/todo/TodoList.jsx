@@ -1322,6 +1322,7 @@ function TodoList() {
                       // 使用本地时区获取今天的日期
                       min={getTodayDateString()}
                       max={formData.deadline || undefined}
+                      style={formData.status === 'Pending' ? {} : {color: 'inherit'}} // 确保文本颜色与其他输入框一致
                     />
                     {formData.status === 'Pending' && (
                       <small className="form-text text-muted">
