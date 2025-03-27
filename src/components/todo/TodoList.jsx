@@ -1285,12 +1285,14 @@ function TodoList() {
                     )}
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">
-                      Start Time {formData.status === 'In Progress' && <span className="text-danger">*</span>}
+                    <label htmlFor="updateStartTime" className="form-label fw-bold">
+                      Start Time {formData.status === 'Pending' && <span className="text-danger">*</span>}
                     </label>
                     <input
                       type="date"
-                      value={formData.startTime}
+                      className="form-control custom-date-input"
+                      id="updateStartTime"
+                      value={formData.startTime || ''}
                       onChange={(e) => {
                         // 当Start Time改变时可能需要调整Deadline
                         const newStartTime = e.target.value;
@@ -1305,33 +1307,25 @@ function TodoList() {
                           setFormData({ ...formData, startTime: newStartTime });
                         }
                       }}
-                      className="form-control"
                       disabled={formData.status === 'Pending'}
-                      required={formData.status === 'In Progress'}
-                      // 使用本地时区获取今天的日期
                       min={getTodayDateString()}
                       max={formData.deadline || undefined}
                     />
                     {formData.status === 'Pending' && (
-                      <small className="form-text text-muted">
-                        Start time can only be set when task is In Progress or Completed.
-                      </small>
-                    )}
-                    {formData.status !== 'Pending' && (
-                      <small className="form-text text-muted">
-                        {formData.deadline 
-                          ? "Start time cannot be later than the deadline." 
-                          : "Start time must be today or a future date."}
+                      <small className="text-muted">
+                        Start time can only be set when task is In Progress.
                       </small>
                     )}
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">
+                    <label htmlFor="updateDeadline" className="form-label fw-bold">
                       Deadline <span className="text-danger">*</span>
                     </label>
                     <input
                       type="date"
-                      value={formData.deadline}
+                      className="form-control custom-date-input"
+                      id="updateDeadline"
+                      value={formData.deadline || ''}
                       onChange={(e) => {
                         // 当Deadline改变时可能需要调整Start Time
                         const newDeadline = e.target.value;
@@ -1356,15 +1350,11 @@ function TodoList() {
                           setFormData({ ...formData, deadline: newDeadline });
                         }
                       }}
-                      className="form-control"
-                      required
-                      // 使用本地时区获取今天的日期
                       min={formData.startTime || getTodayDateString()}
+                      required
                     />
-                    <small className="form-text text-muted">
-                      {formData.startTime 
-                        ? "Deadline must be on or after the start time." 
-                        : "Deadline must be today or a future date."}
+                    <small className="text-muted">
+                      Deadline must be on or after the start time.
                     </small>
                   </div>
                   <div className="mb-3">
