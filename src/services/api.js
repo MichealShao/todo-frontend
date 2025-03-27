@@ -145,7 +145,9 @@ export const tasksAPI = {
         startTime: taskData.startTime ? normalizeDateString(taskData.startTime) : null
       };
       
+      console.log('Sending update to API:', normalizedTask);
       const response = await api.put(`/api/tasks/${taskId}`, normalizedTask);
+      console.log('API update response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Update task error:', error.response?.data || error.message);
