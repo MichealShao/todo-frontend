@@ -74,10 +74,18 @@ export const authAPI = {
   }
 };
 
-// 简化日期字符串格式处理，直接使用提供的日期
+// 确保日期字符串格式正确 (YYYY-MM-DD)，不受时区影响
 const normalizeDateString = (dateStr) => {
   if (!dateStr) return null;
-  return dateStr;
+  // 如果已经是YYYY-MM-DD格式，直接返回
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  
+  // 处理可能带有时间部分的日期字符串
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 // Task related APIs
@@ -86,15 +94,6 @@ export const tasksAPI = {
   getAllTasks: async () => {
     try {
       const response = await api.get('/api/tasks');
-      
-      // 将后端的 start_time 字段直接映射为前端的 startTime，不做处理
-      if (response.data && response.data.tasks && Array.isArray(response.data.tasks)) {
-        response.data.tasks = response.data.tasks.map(task => ({
-          ...task,
-          startTime: task.start_time,
-        }));
-      }
-      
       return response.data;
     } catch (error) {
       console.error('Get tasks error:', error.response?.data || error.message || 'Unknown error');
@@ -110,14 +109,7 @@ export const tasksAPI = {
   getTask: async (id) => {
     try {
       const response = await api.get(`/api/tasks/${id}`);
-      
-      // 直接映射 start_time 到 startTime
-      const responseData = {
-        ...response.data,
-        startTime: response.data.start_time,
-      };
-      
-      return responseData;
+      return response.data;
     } catch (error) {
       console.error('API Error:', error);
       throw error;
@@ -127,23 +119,16 @@ export const tasksAPI = {
   // Create new task
   createTask: async (taskData) => {
     try {
-      // 简化处理，直接映射字段名
+      // 确保日期格式正确
       const normalizedTask = {
         ...taskData,
-        start_time: taskData.startTime,
-        startTime: undefined
+        deadline: normalizeDateString(taskData.deadline),
+        startTime: taskData.startTime ? normalizeDateString(taskData.startTime) : null,
+        createdAt: normalizeDateString(taskData.createdAt) || normalizeDateString(new Date())
       };
       
-      console.log('发送到后端的任务数据:', normalizedTask);
       const response = await api.post('/api/tasks', normalizedTask);
-      
-      // 直接映射 start_time 到 startTime
-      const responseData = {
-        ...response.data,
-        startTime: response.data.start_time,
-      };
-      
-      return responseData;
+      return response.data;
     } catch (error) {
       console.error('Create task error:', error.response?.data || error.message);
       throw error;
@@ -153,24 +138,15 @@ export const tasksAPI = {
   // Update task
   updateTask: async (taskId, taskData) => {
     try {
-      // 简化处理，直接映射字段名
+      // 确保日期格式正确
       const normalizedTask = {
         ...taskData,
-        start_time: taskData.startTime,
-        startTime: undefined
+        deadline: normalizeDateString(taskData.deadline),
+        startTime: taskData.startTime ? normalizeDateString(taskData.startTime) : null
       };
       
-      console.log('Sending update to API:', normalizedTask);
       const response = await api.put(`/api/tasks/${taskId}`, normalizedTask);
-      console.log('API update response:', response.data);
-      
-      // 直接映射 start_time 到 startTime
-      const responseData = {
-        ...response.data,
-        startTime: response.data.start_time,
-      };
-      
-      return responseData;
+      return response.data;
     } catch (error) {
       console.error('Update task error:', error.response?.data || error.message);
       throw error;
