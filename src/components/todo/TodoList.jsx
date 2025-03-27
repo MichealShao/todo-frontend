@@ -820,360 +820,177 @@ function TodoList() {
   // 11. Render
   // ---------------------------
   return (
-    <div className="todo-app">
-      {/* Header with responsive design */}
-      <header className="header">
-        <div className="header-content">
-          <h1 className="app-title">Task Management</h1>
-          <div className="header-actions">
-            <div className="stat-item">
-              <i className="fas fa-calendar-day stat-icon"></i>
-              <div className="stat-content">
-                <span className="stat-label">Today's Tasks</span>
-                <span className="stat-value">{todayTodoCount}</span>
-              </div>
-            </div>
-            <button
-              onClick={openAddModal}
-              className="btn btn-success d-flex align-items-center gap-2"
-              disabled={disabledButtons['addTask']}
-            >
-              <i className="fas fa-plus"></i>
-              <span className="d-none d-sm-inline">Add New Task</span>
-              <span className="d-inline d-sm-none">Add</span>
-            </button>
-            <button
-              onClick={handleLogout}
-              className="logout-button"
-            >
-              <i className="fas fa-sign-out-alt"></i>
-              <span className="d-none d-sm-inline">Logout</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="main-content">
-        {/* Search and filter with responsive layout */}
-        <div className="search-filter-bar">
-          <div className="search-controls">
-            <div className="controls-group search-control-row">
-              <div className="search-input-container">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  placeholder="Search tasks..."
-                  className="search-input"
-                />
-                <i className="fas fa-search search-icon"></i>
-              </div>
-            </div>
-            
-            <div className="controls-group filter-group">
-              <button 
-                onClick={toggleCalendar} 
-                className={`calendar-button ${showCalendar ? 'active' : ''}`}
-              >
-                <i className="fas fa-calendar-alt"></i>
-                <span className="d-none d-md-inline">Daily Deadlines</span>
-              </button>
-              
-              <div className="filter-select-container">
-                <select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">Status (All)</option>
-                  <option value="Pending">Pending</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                </select>
-                <i className="fas fa-filter filter-icon"></i>
-              </div>
-              
-              <div className="filter-select-container">
-                <select
-                  value={filters.priority}
-                  onChange={(e) => handleFilterChange('priority', e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">Priority (All)</option>
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </select>
-                <i className="fas fa-filter filter-icon"></i>
-              </div>
-              
-              <button 
-                onClick={resetFilters}
-                className="reset-button"
-                title="Reset sorting and filtering"
-              >
-                <i className="fas fa-redo-alt"></i> <span className="d-none d-md-inline">Reset</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {error && <div className="error-message">{error}</div>}
+    <div className="container-fluid px-3 py-4">
+      <div className="mb-4">
+        <h1 className="fs-3 mb-3">Task Manager</h1>
         
-        {/* Calendar view and task table are mutually exclusive */}
-        {showCalendar ? (
-          <div className="calendar-container-wrapper">
-            <div className="calendar-header">
-              <h3>Daily Deadlines</h3>
-              <button className="close-calendar" onClick={closeCalendarAndReset}>
-                <i className="fas fa-times"></i>
+        {/* 控制栏 - 移动端优化 */}
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3">
+          <div className="d-flex flex-column flex-sm-row gap-2 mb-3 mb-md-0 w-100 w-md-auto">
+            <button 
+              className="btn btn-primary" 
+              onClick={openAddModal}
+              disabled={isProcessing}
+            >
+              <i className="bi bi-plus-circle me-1"></i> Add Task
+            </button>
+            
+            <div className="d-flex ms-0 ms-sm-2 mt-2 mt-sm-0">
+              <select 
+                className="form-select me-2" 
+                value={filters.status} 
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+                aria-label="Filter by status"
+              >
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+              
+              <select 
+                className="form-select" 
+                value={filters.priority} 
+                onChange={(e) => handleFilterChange('priority', e.target.value)}
+                aria-label="Filter by priority"
+              >
+                <option value="">All Priorities</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="d-flex w-100 w-md-auto">
+            <div className="input-group">
+              <input 
+                type="text" 
+                className="form-control" 
+                placeholder="Search tasks..." 
+                value={searchQuery} 
+                onChange={handleSearchChange}
+              />
+              <button 
+                className="btn btn-outline-secondary" 
+                type="button"
+                onClick={() => setSearchQuery('')}
+                disabled={!searchQuery}
+              >
+                <i className="bi bi-x"></i>
               </button>
             </div>
-            
-            <div className="calendar-body">
-              <CalendarView 
-                datesWithDeadlines={datesWithDeadlines} 
-                onSelectDate={handleDateSelect}
-                selectedDate={selectedDate}
-              />
-            </div>
-            
-            {selectedDate && (
-              <div className="selected-date-tasks">
-                <h4>
-                  Tasks Due on {selectedDate.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric',
-                    weekday: 'long'
-                  })}
-                </h4>
-                {tasksBySelectedDate.length === 0 ? (
-                  <p className="no-tasks">No tasks due on this date</p>
+          </div>
+        </div>
+      </div>
+      
+      {/* 错误提示 */}
+      {error && (
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          {error}
+          <button type="button" className="btn-close" onClick={() => setError(null)}></button>
+        </div>
+      )}
+      
+      {/* 加载指示器 */}
+      {loading ? (
+        <div className="d-flex justify-content-center my-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* 表格响应式调整 */}
+          <div className="table-responsive">
+            <table className="table table-bordered table-hover">
+              <thead className="table-light">
+                <tr className="align-middle text-center fs-6">
+                  <th className="text-center">ID</th>
+                  <th className="text-center">Priority</th>
+                  <th className="text-center">Status</th>
+                  <th className="text-center d-none d-md-table-cell">Start Time</th>
+                  <th className="text-center d-none d-md-table-cell">Deadline</th>
+                  <th className="text-center">Details</th>
+                  <th className="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {!filteredAndSortedTasks || filteredAndSortedTasks.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="text-center py-4">
+                      No tasks found. Create a new task to get started!
+                    </td>
+                  </tr>
                 ) : (
-                  <ul className="date-tasks-list">
-                    {tasksBySelectedDate.map(task => (
-                      <li key={task.id || task._id} className="date-task-item" data-priority={task.priority.toLowerCase()}>
-                        <div className="date-task-details">
-                          <span className="date-task-title">{task.details}</span>
-                          <div className="date-task-badges">
-                            <span className={`priority-badge priority-${task.priority.toLowerCase()}`}>
-                              {task.priority}
-                            </span>
-                            <span className={`status-badge status-${(task.status || 'pending').toLowerCase().replace(' ', '-')}`}>
-                              {task.status || 'Pending'}
-                            </span>
-                            <span className="task-hours">
-                              <i className="fas fa-clock" style={{marginRight: '4px'}}></i>
-                              {task.hours} hours
-                            </span>
-                          </div>
-                        </div>
-                        <div className="date-task-actions d-flex align-items-center">
-                          <button onClick={() => viewTaskDetails(task)} className="date-task-button" title="View details" disabled={disabledButtons[`viewTask-${task.id || task._id}`]}>
-                            <i className="fas fa-eye"></i>
-                          </button>
-                          <button onClick={() => editTask(task)} className="date-task-button" title="Edit task" disabled={disabledButtons[`editTask-${task.id || task._id}`]}>
-                            <i className="fas fa-edit"></i>
-                          </button>
-                          <button onClick={() => deleteTask(task.id || task._id)} className="date-task-button" title="Delete task" disabled={disabledButtons[`deleteTask-${task.id || task._id}`]}>
-                            <i className="fas fa-trash"></i>
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
-        ) : loading ? (
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p>Loading...</p>
-          </div>
-        ) : (
-          <div className="task-table-container">
-            {tasks.length === 0 ? (
-              <div className="empty-state">
-                <p>No tasks yet. Click the "Add Task" button to create your first task.</p>
-              </div>
-            ) : (
-              <div className="card shadow-sm mb-4">
-                <div className="card-body overflow-auto">
-                  <table className="table table-hover align-middle">
-                    <thead>
-                      <tr className="text-center fs-6">
-                        <th className="text-center">ID</th>
-                        <th className="sortable text-center" onClick={() => sortBy("priority")}>
-                          Priority 
-                          <i className={`fas ${sortOptions.sortField === 'priority' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'priority' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
-                                : 'Click for ascending order'
-                            }></i>
-                        </th>
-                        <th className="sortable text-center" onClick={() => sortBy("status")}>
-                          Status 
-                          <i className={`fas ${sortOptions.sortField === 'status' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'status' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
-                                : 'Click for ascending order'
-                            }></i>
-                        </th>
-                        <th className="sortable text-center" onClick={() => sortBy("deadline")}>
-                          Deadline 
-                          <i className={`fas ${sortOptions.sortField === 'deadline' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'deadline' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
-                                : 'Click for ascending order'
-                            }></i>
-                        </th>
-                        <th className="sortable text-center" onClick={() => sortBy("startTime")}>
-                          Start Time
-                          <i className={`fas ${sortOptions.sortField === 'startTime' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'startTime' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
-                                : 'Click for ascending order'
-                            }></i>
-                        </th>
-                        <th className="text-center">Est. Hours</th>
-                        <th className="sortable text-center" onClick={() => sortBy("createdAt")}>
-                          Create Time
-                          <i className={`fas ${sortOptions.sortField === 'createdAt' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'createdAt' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
-                                : 'Click for ascending order'
-                            }></i>
-                        </th>
-                        <th className="text-center">Details</th>
-                        <th className="actions-header text-center">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredAndSortedTasks.map((task) => {
-                        const isInactive = task.status === 'Completed' || task.status === 'Expired';
-                        return (
-                          <tr
-                            key={task.id}
-                            className={`task-row task-row-${task.priority.toLowerCase()} ${isInactive ? 'task-row-inactive' : ''} fs-6`}
+                  filteredAndSortedTasks.map(task => (
+                    <tr key={task._id} className="align-middle fs-6">
+                      <td className="text-center fw-bold">{task._id.slice(-4)}</td>
+                      <td className="text-center">
+                        <span className={`badge ${task.priority === 'High' ? 'bg-danger' : task.priority === 'Medium' ? 'bg-warning text-dark' : 'bg-success'}`}>
+                          {task.priority}
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <span className={`badge ${
+                          task.status === 'Completed' ? 'bg-success' : 
+                          task.status === 'In Progress' ? 'bg-primary' :
+                          task.status === 'Expired' ? 'bg-secondary' : 'bg-warning text-dark'
+                        }`}>
+                          {task.status}
+                        </span>
+                      </td>
+                      <td className="text-center d-none d-md-table-cell">
+                        {task.startTime ? formatDate(task.startTime) : "-"}
+                      </td>
+                      <td className="text-center d-none d-md-table-cell">
+                        {task.deadline ? formatDate(task.deadline) : "-"}
+                      </td>
+                      <td className="text-truncate" style={{ maxWidth: "150px" }}>
+                        {task.details.length > 30
+                          ? `${task.details.substring(0, 30)}...`
+                          : task.details}
+                      </td>
+                      <td className="text-center">
+                        <div className="d-flex justify-content-center gap-1">
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => viewTaskDetails(task)}
                           >
-                            <td className="text-center fw-bold">#{task.displayId || '0000'}</td>
-                            <td className="text-center">
-                              <span className={`badge fs-6 ${task.priority === 'High' ? 'bg-danger' : task.priority === 'Medium' ? 'bg-warning text-dark' : 'bg-success'}`}>
-                                {task.priority}
-                              </span>
-                            </td>
-                            <td className="text-center">
-                              <span className={`badge fs-6 ${
-                                task.status === 'Completed' ? 'bg-success' : 
-                                task.status === 'In Progress' ? 'bg-primary' :
-                                task.status === 'Expired' ? 'bg-secondary' : 'bg-warning text-dark'
-                              }`}>
-                                {task.status}
-                              </span>
-                            </td>
-                            <td className="text-center">{formatDate(task.deadline)}</td>
-                            <td className="text-center">{task.startTime ? formatDate(task.startTime) : "None"}</td>
-                            <td className="text-center">{task.hours}h</td>
-                            <td className="text-center">{formatDate(task.createdAt)}</td>
-                            <td className="text-start text-truncate" style={{ maxWidth: "150px" }}>
-                              {task.details.length > 30 
-                                ? `${task.details.substring(0, 30)}...` 
-                                : task.details}
-                            </td>
-                            <td>
-                              <div className="d-flex justify-content-center gap-2">
-                                <button
-                                  onClick={() => viewTaskDetails(task)}
-                                  className="btn btn-sm btn-outline-primary"
-                                  title="View details"
-                                  disabled={disabledButtons[`viewTask-${task.id || task._id}`]}
-                                >
-                                  <i className="fas fa-eye"></i> <span className="d-none d-md-inline">View</span>
-                                </button>
-                                <button
-                                  onClick={() => editTask(task)}
-                                  className="btn btn-sm btn-outline-secondary"
-                                  title="Edit task"
-                                  disabled={disabledButtons[`editTask-${task.id || task._id}`]}
-                                >
-                                  <i className="fas fa-edit"></i> <span className="d-none d-md-inline">Update</span>
-                                </button>
-                                <button
-                                  onClick={() => deleteTask(task.id || task._id)}
-                                  className="btn btn-sm btn-outline-danger"
-                                  title="Delete task"
-                                  disabled={disabledButtons[`deleteTask-${task.id || task._id}`]}
-                                >
-                                  <i className="fas fa-trash"></i> <span className="d-none d-md-inline">Delete</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+                            <i className="bi bi-eye"></i>
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => editTask(task)}
+                            disabled={isProcessing}
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => deleteTask(task.id || task._id)}
+                            disabled={isProcessing}
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-
-        {/* Pagination control - Display only when table view and multiple pages */}
-        {!showCalendar && !loading && tasks.length > 0 && pagination.pages > 1 && (
-          <nav aria-label="Task pagination">
-            <ul className="pagination justify-content-center">
-              <li className={`page-item ${pagination.page === 1 ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link" 
-                  onClick={() => paginate(pagination.page - 1)}
-                  disabled={pagination.page === 1}
-                >
-                  <i className="fas fa-chevron-left"></i>
-                </button>
-              </li>
-              
-              {/* Page number buttons */}
-              {Array.from({ length: pagination.pages }, (_, i) => (
-                <li key={i + 1} className={`page-item ${pagination.page === i + 1 ? 'active' : ''}`}>
-                  <button 
-                    className="page-link" 
-                    onClick={() => paginate(i + 1)}
-                  >
-                    {i + 1}
-                  </button>
-                </li>
-              ))}
-              
-              <li className={`page-item ${pagination.page === pagination.pages ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link" 
-                  onClick={() => paginate(pagination.page + 1)}
-                  disabled={pagination.page === pagination.pages}
-                >
-                  <i className="fas fa-chevron-right"></i>
-                </button>
-              </li>
-            </ul>
-            <div className="text-center text-muted small">
-              Page {pagination.page} of {pagination.pages}, {pagination.total} items total
+          
+          {/* 移动端时间信息显示 */}
+          <div className="d-md-none">
+            <div className="alert alert-info small">
+              <i className="bi bi-info-circle me-2"></i>
+              Swipe horizontally to see all task information or rotate your device.
             </div>
-          </nav>
-        )}
-      </main>
+          </div>
+        </>
+      )}
 
       {/* Add/Edit Modal */}
       {(showAddModal || showEditModal) && (

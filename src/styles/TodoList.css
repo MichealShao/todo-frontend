@@ -1397,4 +1397,95 @@ input[type="number"] {
   .date-task-title {
     max-width: 180px;
   }
+}
+
+/* 添加这些媒体查询和样式来优化移动端显示 */
+
+/* 基础样式 */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 移动端样式优化 */
+@media (max-width: 767.98px) {
+  /* 缩小表格文字和间距 */
+  .table th, .table td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.85rem;
+  }
+  
+  /* 调整按钮大小 */
+  .btn-sm {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+  }
+  
+  /* 改善表格在小屏幕的显示 */
+  .badge {
+    padding: 0.35em 0.5em;
+    font-size: 0.75em;
+  }
+  
+  /* 调整搜索框在移动端的样式 */
+  .input-group {
+    width: 100%;
+  }
+  
+  /* 调整间距 */
+  .container-fluid {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* 特小屏幕设备优化 */
+@media (max-width: 575.98px) {
+  .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .d-flex.gap-1 {
+    gap: 0.25rem !important;
+  }
+  
+  /* 减少按钮中图标和文字的间距 */
+  .btn i {
+    margin-right: 0.25rem;
+  }
+}
+
+/* 确保模态框在移动设备上的正确显示 */
+.modal-dialog {
+  margin: 0.5rem;
+}
+
+@media (min-width: 576px) {
+  .modal-dialog {
+    max-width: 500px;
+    margin: 1.75rem auto;
+  }
+}
+
+/* 调整详情单元格 */
+.text-truncate {
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 改善表格在小屏幕上的滚动体验 */
+.table-responsive::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.05);
 } 
