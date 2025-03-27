@@ -686,7 +686,7 @@ function TodoList() {
         // Copy task object to avoid modifying the original
         const taskCopy = {...task};
         
-        // Check if task is expired
+        // Check if task is expired - for display purposes only, not persisted
         if (task.status !== 'Completed') {
           const deadline = new Date(task.deadline);
           deadline.setHours(0, 0, 0, 0); // Set to start of day
@@ -707,7 +707,7 @@ function TodoList() {
         if (!filters.priority) return true;
         return task.priority === filters.priority;
       })
-      // Then apply search filter
+      // Apply search filter
       .filter(task => {
         if (!searchQuery) return true;
         

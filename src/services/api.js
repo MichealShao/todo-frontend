@@ -34,13 +34,9 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Token invalid or expired, redirect to login page
       localStorage.removeItem('token');
-      window.location.href = '/';
+      window.location.href = '/login';
     }
-    
-    // 使用可读性更好的错误信息
-    const readableError = new Error(getReadableErrorMessage(error));
-    readableError.originalError = error;
-    return Promise.reject(readableError);
+    return Promise.reject(error);
   }
 );
 
@@ -84,13 +80,13 @@ export const tasksAPI = {
   getAllTasks: async () => {
     try {
       const response = await api.get('/api/tasks');
-      // 在前端处理过期任务状态
-      const tasksWithExpiryCheck = response.data.map(task => 
-        tasksAPI.checkTaskExpiry(task)
-      );
-      return tasksWithExpiryCheck;
+      return response.data;
     } catch (error) {
-      console.error('Get tasks error:', error.response?.data || error.message);
+      console.error('Get tasks error:', error.response?.data || error.message || 'Unknown error');
+      // 如果没有响应，可能是网络问题
+      if (!error.response) {
+        throw new Error('Network Error: Unable to connect to the server');
+      }
       throw error;
     }
   },
@@ -99,7 +95,7 @@ export const tasksAPI = {
   getTask: async (id) => {
     try {
       const response = await api.get(`/api/tasks/${id}`);
-      return tasksAPI.checkTaskExpiry(response.data);
+      return response.data;
     } catch (error) {
       console.error('API Error:', error);
       throw error;
@@ -137,15 +133,6 @@ export const tasksAPI = {
       console.error('Delete task error:', error.response?.data || error.message);
       throw error;
     }
-  },
-  
-  // 辅助函数：检查任务是否过期
-  checkTaskExpiry: (task) => {
-    const today = new Date().toISOString().split('T')[0];
-    if (task.status !== 'Completed' && task.deadline && task.deadline < today) {
-      return { ...task, status: 'Expired' };
-    }
-    return task;
   }
 };
 
