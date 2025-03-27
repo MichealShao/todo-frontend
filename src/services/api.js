@@ -34,9 +34,13 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Token invalid or expired, redirect to login page
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.location.href = '/';
     }
-    return Promise.reject(error);
+    
+    // 使用可读性更好的错误信息
+    const readableError = new Error(getReadableErrorMessage(error));
+    readableError.originalError = error;
+    return Promise.reject(readableError);
   }
 );
 
@@ -80,7 +84,11 @@ export const tasksAPI = {
   getAllTasks: async () => {
     try {
       const response = await api.get('/api/tasks');
-      return response.data;
+      // 在前端处理过期任务状态
+      const tasksWithExpiryCheck = response.data.map(task => 
+        tasksAPI.checkTaskExpiry(task)
+      );
+      return tasksWithExpiryCheck;
     } catch (error) {
       console.error('Get tasks error:', error.response?.data || error.message);
       throw error;
@@ -91,7 +99,7 @@ export const tasksAPI = {
   getTask: async (id) => {
     try {
       const response = await api.get(`/api/tasks/${id}`);
-      return response.data;
+      return tasksAPI.checkTaskExpiry(response.data);
     } catch (error) {
       console.error('API Error:', error);
       throw error;
@@ -129,6 +137,15 @@ export const tasksAPI = {
       console.error('Delete task error:', error.response?.data || error.message);
       throw error;
     }
+  },
+  
+  // 辅助函数：检查任务是否过期
+  checkTaskExpiry: (task) => {
+    const today = new Date().toISOString().split('T')[0];
+    if (task.status !== 'Completed' && task.deadline && task.deadline < today) {
+      return { ...task, status: 'Expired' };
+    }
+    return task;
   }
 };
 

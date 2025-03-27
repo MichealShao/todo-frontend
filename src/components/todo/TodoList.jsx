@@ -215,42 +215,64 @@ function TodoList() {
   // Currently editing task ID (null means not in edit mode)
   const [editingTaskId, setEditingTaskId] = useState(null);
 
-  // Fetch tasks when component loads
-  useEffect(() => {
-    fetchTasks();
-  }, [pagination.page, sortOptions.sortField, sortOptions.sortDirection]);
+  // 在状态选择下拉菜单中添加Expired选项
+  const statusOptions = [
+    { value: 'Pending', label: 'Pending' },
+    { value: 'In Progress', label: 'In Progress' },
+    { value: 'Completed', label: 'Completed' },
+    { value: 'Expired', label: 'Expired' }
+  ];
 
-  // Fetch task data from API
-  const fetchTasks = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await tasksAPI.getAllTasks();
-      console.log('Fetched task data:', response);
-      
-      // Generate display ID for each task
-      const tasksWithDisplayId = response.tasks.map(task => ({
-        ...task,
-        displayId: task.displayId || generateDisplayId(task)
-      }));
-      
-      setTasks(tasksWithDisplayId);
-      
-      // Update pagination info
-      if (response.pagination) {
-        setPagination(response.pagination);
-      }
-    } catch (err) {
-      console.error('Failed to fetch tasks:', err.response?.data || err.message || err);
-      setError('Unable to load tasks. Please refresh the page or try again later.');
-      if (err.response && err.response.status === 401) {
-        // If unauthorized error, redirect to login page
-        navigate('/');
-      }
-    } finally {
-      setLoading(false);
+  // 在渲染任务状态标签时处理Expired状态
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 'Completed':
+        return 'bg-success';
+      case 'In Progress':
+        return 'bg-primary';
+      case 'Expired':
+        return 'bg-danger';
+      default:
+        return 'bg-warning';
     }
   };
+
+  // 添加检查任务是否过期的逻辑
+  const checkForExpiredTasks = (tasks) => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    return tasks.map(task => {
+      // 如果任务未完成且截止日期已过，则标记为过期
+      if (task.status !== 'Completed' && task.deadline && task.deadline < today) {
+        return { ...task, status: 'Expired' };
+      }
+      return task;
+    });
+  };
+
+  // 在获取任务列表后检查过期任务
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        setLoading(true);
+        const response = await tasksAPI.getAllTasks();
+        // 检查并更新过期任务
+        const tasksWithExpiredStatus = checkForExpiredTasks(response);
+        setTasks(tasksWithExpiredStatus);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch tasks:', err);
+        setLoading(false);
+        setError('Unable to load tasks. Please refresh the page or try again later.');
+        if (err.response && err.response.status === 401) {
+          // If unauthorized error, redirect to login page
+          navigate('/');
+        }
+      }
+    };
+
+    fetchTasks();
+  }, [navigate, refresh]);
 
   // ---------------------------
   // 2. Pagination control
@@ -890,6 +912,7 @@ function TodoList() {
                   <option value="Pending">Pending</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Completed">Completed</option>
+                  <option value="Expired">Expired</option>
                 </select>
                 <i className="fas fa-filter filter-icon"></i>
               </div>
@@ -1076,11 +1099,7 @@ function TodoList() {
                               </span>
                             </td>
                             <td className="text-center">
-                              <span className={`badge fs-6 ${
-                                task.status === 'Completed' ? 'bg-success' : 
-                                task.status === 'In Progress' ? 'bg-primary' :
-                                task.status === 'Expired' ? 'bg-secondary' : 'bg-warning text-dark'
-                              }`}>
+                              <span className={`badge fs-6 ${getStatusBadgeClass(task.status)}`}>
                                 {task.status}
                               </span>
                             </td>
@@ -1229,6 +1248,7 @@ function TodoList() {
                       <option value="Pending">Pending</option>
                       <option value="In Progress">In Progress</option>
                       <option value="Completed">Completed</option>
+                      <option value="Expired">Expired</option>
                     </select>
                     {showEditModal && formData.status === 'Expired' && (
                       <small className="form-text text-muted">
@@ -1358,11 +1378,7 @@ function TodoList() {
                   <div className="mb-3">
                     <label className="form-label fw-bold">Status</label>
                     <div className="form-control bg-light d-flex align-items-center">
-                      <span className={`badge ${
-                        viewingTask.status === 'Completed' ? 'bg-success' : 
-                        viewingTask.status === 'In Progress' ? 'bg-primary' :
-                        viewingTask.status === 'Expired' ? 'bg-secondary' : 'bg-warning text-dark'
-                      }`}>
+                      <span className={`badge ${getStatusBadgeClass(viewingTask.status)}`}>
                         {viewingTask.status}
                       </span>
                     </div>
