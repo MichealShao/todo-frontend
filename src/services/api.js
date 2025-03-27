@@ -74,6 +74,20 @@ export const authAPI = {
   }
 };
 
+// 确保日期字符串格式正确 (YYYY-MM-DD)，不受时区影响
+const normalizeDateString = (dateStr) => {
+  if (!dateStr) return null;
+  // 如果已经是YYYY-MM-DD格式，直接返回
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  
+  // 处理可能带有时间部分的日期字符串
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Task related APIs
 export const tasksAPI = {
   // Get all tasks
@@ -105,7 +119,15 @@ export const tasksAPI = {
   // Create new task
   createTask: async (taskData) => {
     try {
-      const response = await api.post('/api/tasks', taskData);
+      // 确保日期格式正确
+      const normalizedTask = {
+        ...taskData,
+        deadline: normalizeDateString(taskData.deadline),
+        startTime: taskData.startTime ? normalizeDateString(taskData.startTime) : null,
+        createdAt: normalizeDateString(taskData.createdAt) || normalizeDateString(new Date())
+      };
+      
+      const response = await api.post('/api/tasks', normalizedTask);
       return response.data;
     } catch (error) {
       console.error('Create task error:', error.response?.data || error.message);
@@ -116,7 +138,14 @@ export const tasksAPI = {
   // Update task
   updateTask: async (taskId, taskData) => {
     try {
-      const response = await api.put(`/api/tasks/${taskId}`, taskData);
+      // 确保日期格式正确
+      const normalizedTask = {
+        ...taskData,
+        deadline: normalizeDateString(taskData.deadline),
+        startTime: taskData.startTime ? normalizeDateString(taskData.startTime) : null
+      };
+      
+      const response = await api.put(`/api/tasks/${taskId}`, normalizedTask);
       return response.data;
     } catch (error) {
       console.error('Update task error:', error.response?.data || error.message);

@@ -354,6 +354,20 @@ function TodoList() {
     return `${year}-${month}-${day}`;
   };
 
+  // 确保日期字符串不受时区影响 - 保持YYYY-MM-DD格式
+  const normalizeDateString = (dateStr) => {
+    if (!dateStr) return "";
+    // 如果已经是YYYY-MM-DD格式，直接返回
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    
+    // 处理可能带有时间部分的日期字符串
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // ---------------------------
   // 5. Add new task
   // ---------------------------
@@ -524,13 +538,15 @@ function TodoList() {
       return;
     }
 
+    // 准备任务数据并确保日期格式正确
     const taskData = {
-      ...formData,
       priority: formData.priority || 'Medium',
       deadline: formData.deadline || currentDateStr,
       hours: formData.hours ? parseInt(formData.hours, 10) : 1,
       status: formData.status || 'Pending',
-      startTime: formData.startTime || null
+      details: formData.details.trim(),
+      // 确保日期只包含日期部分，不包含时间部分
+      startTime: formData.startTime ? normalizeDateString(formData.startTime) : null
     };
 
     try {
@@ -564,7 +580,9 @@ function TodoList() {
         // Add mode
         const taskWithCreatedAt = {
           ...taskData,
-          createdAt: new Date().toISOString()
+          // 使用标准化的日期格式
+          deadline: normalizeDateString(taskData.deadline),
+          createdAt: getTodayDateString() // 使用本地日期
         };
         
         const newTask = await tasksAPI.createTask(taskWithCreatedAt);
