@@ -510,47 +510,54 @@ function TodoList() {
   // ---------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (isProcessing) return; 
-    setIsProcessing(true);
     setError(null);
-    
-    // Validate form data
-    if (!formData.details || formData.details.trim() === '') {
-      setError('Please enter task details. This field cannot be empty.');
-      setIsProcessing(false);
-      return;
-    }
-    
-    // 使用本地时区获取今天的日期字符串
-    const currentDateStr = getTodayDateString();
-    
-    // For new tasks, validate deadline is not before current date
-    if (formData.deadline < currentDateStr) {
-      setError('Deadline cannot be before today. Please select today or a future date.');
-      setIsProcessing(false);
-      return;
-    }
-    
-    // Validate deadline is not before start time
-    if (formData.startTime && formData.deadline && formData.deadline < formData.startTime) {
-      setError('Deadline cannot be earlier than Start Time. Please adjust the dates.');
-      setIsProcessing(false);
-      return;
-    }
-
-    // 准备任务数据并确保日期格式正确
-    const taskData = {
-      priority: formData.priority || 'Medium',
-      deadline: formData.deadline || currentDateStr,
-      hours: formData.hours ? parseInt(formData.hours, 10) : 1,
-      status: formData.status || 'Pending',
-      details: formData.details.trim(),
-      // 确保日期只包含日期部分，不包含时间部分
-      startTime: formData.startTime ? normalizeDateString(formData.startTime) : null
-    };
+    setIsProcessing(true);
 
     try {
+      // Make sure deadline is not earlier than start time if start time is set
+      if (formData.startTime && formData.deadline) {
+        if (new Date(formData.deadline) < new Date(formData.startTime)) {
+          setError("Deadline cannot be earlier than Start Time. Please adjust the dates.");
+          setIsProcessing(false);
+          return;
+        }
+      }
+
+      // Validate form data
+      if (!formData.details || formData.details.trim() === '') {
+        setError('Please enter task details. This field cannot be empty.');
+        setIsProcessing(false);
+        return;
+      }
+      
+      // 使用本地时区获取今天的日期字符串
+      const currentDateStr = getTodayDateString();
+      
+      // For new tasks, validate deadline is not before current date
+      if (formData.deadline < currentDateStr) {
+        setError('Deadline cannot be before today. Please select today or a future date.');
+        setIsProcessing(false);
+        return;
+      }
+      
+      // Validate deadline is not before start time
+      if (formData.startTime && formData.deadline && formData.deadline < formData.startTime) {
+        setError('Deadline cannot be earlier than Start Time. Please adjust the dates.');
+        setIsProcessing(false);
+        return;
+      }
+
+      // 准备任务数据并确保日期格式正确
+      const taskData = {
+        priority: formData.priority || 'Medium',
+        deadline: formData.deadline || currentDateStr,
+        hours: formData.hours ? parseInt(formData.hours, 10) : 1,
+        status: formData.status || 'Pending',
+        details: formData.details.trim(),
+        // 确保日期只包含日期部分，不包含时间部分
+        startTime: formData.startTime ? normalizeDateString(formData.startTime) : null
+      };
+
       if (showEditModal) {
         // Edit mode
         if (!editingTaskId) {
@@ -1312,11 +1319,9 @@ function TodoList() {
                       min={getTodayDateString()}
                       max={formData.deadline || undefined}
                     />
-                    {formData.status === 'Pending' && (
-                      <small className="text-muted">
-                        Start time can only be set when task is In Progress.
-                      </small>
-                    )}
+                    <small className="text-muted">
+                      Start time can only be set when task is In Progress or Completed.
+                    </small>
                   </div>
                   <div className="mb-3">
                     <label htmlFor="updateDeadline" className="form-label fw-bold">

@@ -74,13 +74,13 @@ export const authAPI = {
   }
 };
 
-// 确保日期字符串格式正确 (YYYY-MM-DD)，不受时区影响
+// Normalize date string format (YYYY-MM-DD), not affected by timezone
 const normalizeDateString = (dateStr) => {
   if (!dateStr) return null;
-  // 如果已经是YYYY-MM-DD格式，直接返回
+  // If already in YYYY-MM-DD format, return as is
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
   
-  // 处理可能带有时间部分的日期字符串
+  // Process date string that may contain time part
   const date = new Date(dateStr);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -135,20 +135,20 @@ export const tasksAPI = {
   // Create new task
   createTask: async (taskData) => {
     try {
-      // 确保日期格式正确并将startTime映射为start_time
+      // Ensure date format is correct and map startTime to start_time
       const normalizedTask = {
         ...taskData,
         deadline: taskData.deadline,
-        start_time: taskData.startTime, // 映射字段
-        // 不要包含startTime字段，避免冗余
+        start_time: taskData.startTime, // Map field
+        // Don't include startTime field to avoid redundancy
         startTime: undefined,
         createdAt: taskData.createdAt || new Date().toISOString().split('T')[0]
       };
       
-      console.log('Creating task with data:', normalizedTask);
+      console.log('Sending data to API:', normalizedTask);
       const response = await api.post('/api/tasks', normalizedTask);
       
-      // 映射返回的数据，将start_time变为startTime
+      // Map response data, convert start_time to startTime
       const responseWithStartTime = {
         ...response.data,
         startTime: response.data.start_time
