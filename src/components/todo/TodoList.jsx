@@ -270,15 +270,25 @@ function TodoList() {
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     
-    // Handle date strings correctly
-    const date = new Date(dateStr);
-    
-    // Use safe date formatting
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    try {
+      // 确保使用一致的日期解析方式
+      // 创建日期对象但不转换时区
+      const date = new Date(dateStr);
+      
+      // 对于UTC日期，使用toLocaleDateString确保正确显示本地日期
+      return new Date(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate()
+      ).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch (error) {
+      console.error("日期格式化错误:", error);
+      return dateStr; // 如果解析失败，返回原始字符串
+    }
   };
 
   // ---------------------------
@@ -360,11 +370,12 @@ function TodoList() {
     // 如果已经是YYYY-MM-DD格式，直接返回
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
     
-    // 处理可能带有时间部分的日期字符串
+    // 对于后端返回的日期，特殊处理UTC时区问题
     const date = new Date(dateStr);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    // 使用 UTC 日期来避免时区偏移问题
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
 
@@ -396,31 +407,20 @@ function TodoList() {
   const editTask = (task) => {
     const taskId = task.id || task._id;
     debounceOperation(`editTask-${taskId}`, () => {
-      // Ensure date format is correct, convert to YYYY-MM-DD format
-      const formattedDeadline = task.deadline ? 
-        (typeof task.deadline === 'string' ? 
-          task.deadline.split('T')[0] : 
-          new Date(task.deadline).toISOString().split('T')[0]) : 
-        '';
+      // 规范化处理日期，确保与后端一致
+      const formattedDeadline = task.deadline ? normalizeDateString(task.deadline) : '';
+      const formattedStartTime = task.startTime ? normalizeDateString(task.startTime) : '';
         
-      // Format start time if exists
-      const formattedStartTime = task.startTime ? 
-        (typeof task.startTime === 'string' ? 
-          task.startTime.split('T')[0] : 
-          new Date(task.startTime).toISOString().split('T')[0]) : 
-        '';
-      
       console.log('Editing task, current status:', task.status);
       console.log('Editing task ID:', taskId);
-      console.log('Start time value:', formattedStartTime);
-      
+        
       if (!taskId) {
         console.error('Task missing ID field:', task);
         setError('Task ID is missing. Please refresh the page and try again.');
         return;
       }
-      
-      // Initialize form
+        
+      // 初始化表单
       setFormData({
         priority: task.priority || 'Medium',
         deadline: formattedDeadline,
@@ -429,7 +429,7 @@ function TodoList() {
         status: task.status || 'Pending',
         startTime: formattedStartTime || ''
       });
-      
+        
       setEditingTaskId(taskId);
       setShowEditModal(true);
     });
@@ -550,8 +550,6 @@ function TodoList() {
       startTime: formData.startTime ? normalizeDateString(formData.startTime) : null
     };
 
-    console.log('Submitting task with data:', taskData);
-
     try {
       if (showEditModal) {
         // Edit mode
@@ -561,25 +559,17 @@ function TodoList() {
           return;
         }
         
-        console.log('Updating task with ID:', editingTaskId, 'Data:', taskData);
         const updatedTask = await tasksAPI.updateTask(editingTaskId, taskData);
         
         setTasks((prev) => {
           return prev.map((t) => {
             const taskId = t.id || t._id;
             if (taskId === editingTaskId) {
-              // 确保所有字段正确
               return {
                 ...t,
                 ...updatedTask,
                 id: taskId,
-                displayId: t.displayId,
-                status: updatedTask.status || t.status,
-                priority: updatedTask.priority || t.priority,
-                deadline: updatedTask.deadline || t.deadline,
-                startTime: updatedTask.startTime, // 明确处理startTime
-                hours: updatedTask.hours || t.hours,
-                details: updatedTask.details || t.details
+                displayId: t.displayId
               };
             }
             return t;
@@ -1296,12 +1286,14 @@ function TodoList() {
                     )}
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">
-                      Start Time {formData.status === 'In Progress' && <span className="text-danger">*</span>}
+                    <label htmlFor="updateStartTime" className="form-label fw-bold">
+                      Start Time {formData.status === 'Pending' && <span className="text-danger">*</span>}
                     </label>
                     <input
                       type="date"
-                      value={formData.startTime}
+                      className="form-control custom-date-input"
+                      id="updateStartTime"
+                      value={formData.startTime || ''}
                       onChange={(e) => {
                         // 当Start Time改变时可能需要调整Deadline
                         const newStartTime = e.target.value;
@@ -1316,33 +1308,25 @@ function TodoList() {
                           setFormData({ ...formData, startTime: newStartTime });
                         }
                       }}
-                      className="form-control"
                       disabled={formData.status === 'Pending'}
-                      required={formData.status === 'In Progress'}
-                      // 使用本地时区获取今天的日期
                       min={getTodayDateString()}
                       max={formData.deadline || undefined}
                     />
                     {formData.status === 'Pending' && (
-                      <small className="form-text text-muted">
-                        Start time can only be set when task is In Progress or Completed.
-                      </small>
-                    )}
-                    {formData.status !== 'Pending' && (
-                      <small className="form-text text-muted">
-                        {formData.deadline 
-                          ? "Start time cannot be later than the deadline." 
-                          : "Start time must be today or a future date."}
+                      <small className="text-muted">
+                        Start time can only be set when task is In Progress.
                       </small>
                     )}
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">
+                    <label htmlFor="updateDeadline" className="form-label fw-bold">
                       Deadline <span className="text-danger">*</span>
                     </label>
                     <input
                       type="date"
-                      value={formData.deadline}
+                      className="form-control custom-date-input"
+                      id="updateDeadline"
+                      value={formData.deadline || ''}
                       onChange={(e) => {
                         // 当Deadline改变时可能需要调整Start Time
                         const newDeadline = e.target.value;
@@ -1367,15 +1351,11 @@ function TodoList() {
                           setFormData({ ...formData, deadline: newDeadline });
                         }
                       }}
-                      className="form-control"
-                      required
-                      // 使用本地时区获取今天的日期
                       min={formData.startTime || getTodayDateString()}
+                      required
                     />
-                    <small className="form-text text-muted">
-                      {formData.startTime 
-                        ? "Deadline must be on or after the start time." 
-                        : "Deadline must be today or a future date."}
+                    <small className="text-muted">
+                      Deadline must be on or after the start time.
                     </small>
                   </div>
                   <div className="mb-3">
