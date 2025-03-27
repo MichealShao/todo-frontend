@@ -146,6 +146,7 @@ function TodoList() {
   };
 
   const [tasks, setTasks] = useState([]);
+  const [originalTasks, setOriginalTasks] = useState([]); // 存储原始数据
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState(''); // Search query state
@@ -186,10 +187,8 @@ function TodoList() {
     limit: 20,
     pages: 0
   });
-  const [sortOptions, setSortOptions] = useState({
-    sortField: 'deadline',
-    sortDirection: 'asc'
-  });
+  const [sortField, setSortField] = useState('deadline'); // 默认按截止日期排序
+  const [sortDirection, setSortDirection] = useState('asc'); // 默认升序
 
   // Control various modals
   const [showAddModal, setShowAddModal] = useState(false);
@@ -218,18 +217,19 @@ function TodoList() {
   // Fetch tasks when component loads
   useEffect(() => {
     fetchTasks();
-  }, [pagination.page, sortOptions.sortField, sortOptions.sortDirection]);
+  }, [pagination.page, sortField, sortDirection]);
 
   // Fetch task data from API
   const fetchTasks = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await tasksAPI.getAllTasks();
-      console.log('Fetched task data:', response);
+      const data = await tasksAPI.getAllTasks();
+      setOriginalTasks(data); // 存储原始数据
+      setTasks(sortTasks(data, sortField, sortDirection)); // 应用排序
       
       // Generate display ID for each task
-      const tasksWithDisplayId = response.tasks.map(task => ({
+      const tasksWithDisplayId = data.tasks.map(task => ({
         ...task,
         displayId: task.displayId || generateDisplayId(task)
       }));
@@ -237,8 +237,8 @@ function TodoList() {
       setTasks(tasksWithDisplayId);
       
       // Update pagination info
-      if (response.pagination) {
-        setPagination(response.pagination);
+      if (data.pagination) {
+        setPagination(data.pagination);
       }
     } catch (err) {
       console.error('Failed to fetch tasks:', err.response?.data || err.message || err);
@@ -250,6 +250,99 @@ function TodoList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 前端排序函数
+  const sortTasks = (tasksToSort, field, direction) => {
+    return [...tasksToSort].sort((a, b) => {
+      let valueA, valueB;
+      
+      // 处理不同字段类型的比较
+      switch(field) {
+        case 'id':
+          valueA = a._id;
+          valueB = b._id;
+          break;
+        case 'priority':
+          // 优先级排序：High > Medium > Low
+          const priorityOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
+          valueA = priorityOrder[a.priority] || 0;
+          valueB = priorityOrder[b.priority] || 0;
+          break;
+        case 'status':
+          // 状态排序：In Progress > Pending > Completed
+          const statusOrder = { 'In Progress': 3, 'Pending': 2, 'Completed': 1 };
+          valueA = statusOrder[a.status] || 0;
+          valueB = statusOrder[b.status] || 0;
+          break;
+        case 'startTime':
+          valueA = a.startTime ? new Date(a.startTime).getTime() : 0;
+          valueB = b.startTime ? new Date(b.startTime).getTime() : 0;
+          break;
+        case 'deadline':
+          valueA = a.deadline ? new Date(a.deadline).getTime() : Number.MAX_SAFE_INTEGER;
+          valueB = b.deadline ? new Date(b.deadline).getTime() : Number.MAX_SAFE_INTEGER;
+          break;
+        case 'estimatedHours':
+          valueA = a.estimatedHours || 0;
+          valueB = b.estimatedHours || 0;
+          break;
+        case 'details':
+          valueA = a.details || '';
+          valueB = b.details || '';
+          break;
+        case 'createdAt':
+          valueA = new Date(a.createdAt).getTime();
+          valueB = new Date(b.createdAt).getTime();
+          break;
+        default:
+          valueA = a[field] || '';
+          valueB = b[field] || '';
+      }
+      
+      // 执行排序比较
+      if (valueA < valueB) {
+        return direction === 'asc' ? -1 : 1;
+      }
+      if (valueA > valueB) {
+        return direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  // 处理排序
+  const handleSort = (field) => {
+    // 如果点击当前排序字段，切换排序方向
+    const newDirection = field === sortField && sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortField(field);
+    setSortDirection(newDirection);
+    
+    // 在前端执行排序，不再调用API
+    setTasks(sortTasks(originalTasks, field, newDirection));
+  };
+
+  // 添加任务后更新列表
+  const addTaskToList = (newTask) => {
+    const updatedTasks = [...originalTasks, newTask];
+    setOriginalTasks(updatedTasks);
+    setTasks(sortTasks(updatedTasks, sortField, sortDirection));
+  };
+
+  // 更新任务后更新列表
+  const updateTaskInList = (updatedTask) => {
+    const updatedTasks = originalTasks.map(task => 
+      task._id === updatedTask._id ? updatedTask : task
+    );
+    setOriginalTasks(updatedTasks);
+    setTasks(sortTasks(updatedTasks, sortField, sortDirection));
+  };
+
+  // 删除任务后更新列表
+  const removeTaskFromList = (taskId) => {
+    const updatedTasks = originalTasks.filter(task => task._id !== taskId);
+    setOriginalTasks(updatedTasks);
+    setTasks(sortTasks(updatedTasks, sortField, sortDirection));
   };
 
   // ---------------------------
@@ -281,28 +374,21 @@ function TodoList() {
   // 4. Sort switch
   // ---------------------------
   const sortBy = (field) => {
-    if (sortOptions.sortField === field) {
+    if (sortField === field) {
       // If already this field, loop switch: asc <-> desc
       // Infinite loop switch sorting direction
-      setSortOptions({
-        sortField: field,
-        sortDirection: sortOptions.sortDirection === "asc" ? "desc" : "asc"
-      });
+      setSortDirection(prevDirection => prevDirection === "asc" ? "desc" : "asc");
     } else {
       // New field, sort from small to large (first click)
-      setSortOptions({
-        sortField: field,
-        sortDirection: "asc"
-      });
+      setSortField(field);
+      setSortDirection('asc');
     }
   };
 
   // Reset sorting and filtering
   const resetFilters = () => {
-    setSortOptions({
-      sortField: 'deadline',
-      sortDirection: 'asc'
-    });
+    setSortField('deadline');
+    setSortDirection('asc');
     setSearchQuery('');
     setFilters({
       status: '',
@@ -453,10 +539,7 @@ function TodoList() {
       await tasksAPI.deleteTask(deleteTaskId);
       
       // Remove task from local state
-      setTasks((prev) => prev.filter((t) => {
-        const taskId = t.id || t._id;
-        return taskId !== deleteTaskId;
-      }));
+      removeTaskFromList(deleteTaskId);
       
       setError(null);
     } catch (err) {
@@ -526,20 +609,7 @@ function TodoList() {
         
         const updatedTask = await tasksAPI.updateTask(editingTaskId, taskData);
         
-        setTasks((prev) => {
-          return prev.map((t) => {
-            const taskId = t.id || t._id;
-            if (taskId === editingTaskId) {
-              return {
-                ...t,
-                ...updatedTask,
-                id: taskId,
-                displayId: t.displayId
-              };
-            }
-            return t;
-          });
-        });
+        updateTaskInList(updatedTask);
         
         closeEditModal();
       } else {
@@ -554,10 +624,7 @@ function TodoList() {
         // Generate display ID for new task
         const displayId = generateDisplayId(newTask);
 
-        setTasks((prev) => [...prev, {
-          ...newTask,
-          displayId: displayId
-        }]);
+        addTaskToList(newTask);
         
         closeAddModal();
       }
@@ -731,9 +798,9 @@ function TodoList() {
         
         // If both are inactive or both are active, then sort by the current sort field
         if (aIsInactive === bIsInactive) {
-          if (sortOptions.sortField) {
-            const aValue = a[sortOptions.sortField];
-            const bValue = b[sortOptions.sortField];
+          if (sortField) {
+            const aValue = a[sortField];
+            const bValue = b[sortField];
             
             // Handle different types of values
             if (aValue === bValue) return 0;
@@ -741,14 +808,14 @@ function TodoList() {
             if (bValue === undefined || bValue === null) return -1;
             
             // Return comparison result based on sort direction
-            const direction = sortOptions.sortDirection === 'asc' ? 1 : -1;
+            const direction = sortDirection === 'asc' ? 1 : -1;
             return aValue < bValue ? -1 * direction : 1 * direction;
           }
         }
         
         return 0;
       });
-  }, [tasks, sortOptions.sortField, sortOptions.sortDirection, searchQuery, filters]);
+  }, [tasks, sortField, sortDirection, searchQuery, filters]);
 
   // Calculate today's todo count after filteredAndSortedTasks memo
   const todayTodoCount = useMemo(() => {
@@ -1008,52 +1075,52 @@ function TodoList() {
                         <th className="text-center">ID</th>
                         <th className="sortable text-center" onClick={() => sortBy("priority")}>
                           Priority 
-                          <i className={`fas ${sortOptions.sortField === 'priority' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
+                          <i className={`fas ${sortField === 'priority' 
+                            ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
                             : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'priority' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
+                              sortField === 'priority' 
+                                ? (sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
                                 : 'Click for ascending order'
                             }></i>
                         </th>
                         <th className="sortable text-center" onClick={() => sortBy("status")}>
                           Status 
-                          <i className={`fas ${sortOptions.sortField === 'status' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
+                          <i className={`fas ${sortField === 'status' 
+                            ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
                             : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'status' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
+                              sortField === 'status' 
+                                ? (sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
                                 : 'Click for ascending order'
                             }></i>
                         </th>
                         <th className="sortable text-center" onClick={() => sortBy("deadline")}>
                           Deadline 
-                          <i className={`fas ${sortOptions.sortField === 'deadline' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
+                          <i className={`fas ${sortField === 'deadline' 
+                            ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
                             : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'deadline' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
+                              sortField === 'deadline' 
+                                ? (sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
                                 : 'Click for ascending order'
                             }></i>
                         </th>
                         <th className="sortable text-center" onClick={() => sortBy("startTime")}>
                           Start Time
-                          <i className={`fas ${sortOptions.sortField === 'startTime' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
+                          <i className={`fas ${sortField === 'startTime' 
+                            ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
                             : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'startTime' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
+                              sortField === 'startTime' 
+                                ? (sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
                                 : 'Click for ascending order'
                             }></i>
                         </th>
                         <th className="text-center">Est. Hours</th>
                         <th className="sortable text-center" onClick={() => sortBy("createdAt")}>
                           Create Time
-                          <i className={`fas ${sortOptions.sortField === 'createdAt' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
+                          <i className={`fas ${sortField === 'createdAt' 
+                            ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
                             : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'createdAt' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
+                              sortField === 'createdAt' 
+                                ? (sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
                                 : 'Click for ascending order'
                             }></i>
                         </th>
