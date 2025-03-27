@@ -1317,12 +1317,12 @@ function TodoList() {
                         }
                       }}
                       className="form-control"
-                      disabled={formData.status === 'Pending'}
+                      readOnly={formData.status === 'Pending'}
                       required={formData.status === 'In Progress'}
                       // 使用本地时区获取今天的日期
                       min={getTodayDateString()}
                       max={formData.deadline || undefined}
-                      style={formData.status === 'Pending' ? {} : {color: 'inherit'}} // 确保文本颜色与其他输入框一致
+                      style={{color: '#212529'}} // 确保文本颜色始终为深色
                     />
                     {formData.status === 'Pending' && (
                       <small className="form-text text-muted">
