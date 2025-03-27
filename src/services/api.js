@@ -77,15 +77,49 @@ export const authAPI = {
 // 确保日期字符串格式正确 (YYYY-MM-DD)，不受时区影响
 const normalizeDateString = (dateStr) => {
   if (!dateStr) return null;
-  // 如果已经是YYYY-MM-DD格式，直接返回
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
   
-  // 处理可能带有时间部分的日期字符串
-  const date = new Date(dateStr);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  try {
+    // 如果已经是YYYY-MM-DD格式，直接返回
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    
+    // 创建日期对象
+    const date = new Date(dateStr);
+    
+    // 获取本地日期部分，避免时区转换问题
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    // 返回固定格式的日期字符串 YYYY-MM-DD
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error('日期格式化错误:', error);
+    return null;
+  }
+};
+
+// 创建保留时间部分的ISO格式日期字符串，用于发送完整的日期时间
+const createLocalDateObject = (dateStr) => {
+  if (!dateStr) return null;
+  
+  try {
+    // 创建日期对象
+    const date = new Date(dateStr);
+    
+    // 创建一个不受时区影响的新日期对象
+    // 明确使用本地年月日时分秒创建日期对象
+    const localDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      12, 0, 0 // 固定时间为中午12:00:00，避免跨日问题
+    );
+    
+    return localDate;
+  } catch (error) {
+    console.error('创建本地日期对象错误:', error);
+    return null;
+  }
 };
 
 // Task related APIs
@@ -94,6 +128,15 @@ export const tasksAPI = {
   getAllTasks: async () => {
     try {
       const response = await api.get('/api/tasks');
+      
+      // 如果有任务数据，将后端的 start_time 字段映射为前端的 startTime
+      if (response.data && response.data.tasks && Array.isArray(response.data.tasks)) {
+        response.data.tasks = response.data.tasks.map(task => ({
+          ...task,
+          startTime: task.start_time,  // 添加 startTime 字段
+        }));
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Get tasks error:', error.response?.data || error.message || 'Unknown error');
@@ -109,7 +152,14 @@ export const tasksAPI = {
   getTask: async (id) => {
     try {
       const response = await api.get(`/api/tasks/${id}`);
-      return response.data;
+      
+      // 将后端的 start_time 字段映射为前端的 startTime
+      const responseData = {
+        ...response.data,
+        startTime: response.data.start_time,
+      };
+      
+      return responseData;
     } catch (error) {
       console.error('API Error:', error);
       throw error;
@@ -119,16 +169,27 @@ export const tasksAPI = {
   // Create new task
   createTask: async (taskData) => {
     try {
-      // 确保日期格式正确
+      // 字段名称映射 - 将前端的 startTime 转换为后端需要的 start_time
       const normalizedTask = {
         ...taskData,
         deadline: normalizeDateString(taskData.deadline),
-        startTime: taskData.startTime ? normalizeDateString(taskData.startTime) : null,
-        createdAt: normalizeDateString(taskData.createdAt) || normalizeDateString(new Date())
+        // 使用本地日期对象处理开始时间
+        start_time: taskData.startTime ? createLocalDateObject(taskData.startTime) : null,
+        createdAt: normalizeDateString(taskData.createdAt) || normalizeDateString(new Date()),
+        // 删除原始的 startTime 字段以避免冗余和混淆
+        startTime: undefined
       };
       
+      console.log('发送到后端的任务数据:', normalizedTask);
       const response = await api.post('/api/tasks', normalizedTask);
-      return response.data;
+      
+      // 在返回的数据中将 start_time 映射回 startTime，保持前端一致性
+      const responseData = {
+        ...response.data,
+        startTime: response.data.start_time,
+      };
+      
+      return responseData;
     } catch (error) {
       console.error('Create task error:', error.response?.data || error.message);
       throw error;
@@ -138,15 +199,27 @@ export const tasksAPI = {
   // Update task
   updateTask: async (taskId, taskData) => {
     try {
-      // 确保日期格式正确
+      // 字段名称映射 - 将前端的 startTime 转换为后端需要的 start_time
       const normalizedTask = {
         ...taskData,
         deadline: normalizeDateString(taskData.deadline),
-        startTime: taskData.startTime ? normalizeDateString(taskData.startTime) : null
+        // 使用本地日期对象处理开始时间
+        start_time: taskData.startTime ? createLocalDateObject(taskData.startTime) : null,
+        // 删除原始的 startTime 字段以避免冗余和混淆
+        startTime: undefined
       };
       
+      console.log('Sending update to API:', normalizedTask);
       const response = await api.put(`/api/tasks/${taskId}`, normalizedTask);
-      return response.data;
+      console.log('API update response:', response.data);
+      
+      // 在返回的数据中将 start_time 映射回 startTime，保持前端一致性
+      const responseData = {
+        ...response.data,
+        startTime: response.data.start_time,
+      };
+      
+      return responseData;
     } catch (error) {
       console.error('Update task error:', error.response?.data || error.message);
       throw error;

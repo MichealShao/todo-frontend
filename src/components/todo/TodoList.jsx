@@ -412,6 +412,7 @@ function TodoList() {
       
       console.log('Editing task, current status:', task.status);
       console.log('Editing task ID:', taskId);
+      console.log('Start time value:', formattedStartTime);
       
       if (!taskId) {
         console.error('Task missing ID field:', task);
@@ -549,6 +550,8 @@ function TodoList() {
       startTime: formData.startTime ? normalizeDateString(formData.startTime) : null
     };
 
+    console.log('Submitting task with data:', taskData);
+
     try {
       if (showEditModal) {
         // Edit mode
@@ -558,17 +561,25 @@ function TodoList() {
           return;
         }
         
+        console.log('Updating task with ID:', editingTaskId, 'Data:', taskData);
         const updatedTask = await tasksAPI.updateTask(editingTaskId, taskData);
         
         setTasks((prev) => {
           return prev.map((t) => {
             const taskId = t.id || t._id;
             if (taskId === editingTaskId) {
+              // 确保所有字段正确
               return {
                 ...t,
                 ...updatedTask,
                 id: taskId,
-                displayId: t.displayId
+                displayId: t.displayId,
+                status: updatedTask.status || t.status,
+                priority: updatedTask.priority || t.priority,
+                deadline: updatedTask.deadline || t.deadline,
+                startTime: updatedTask.startTime, // 明确处理startTime
+                hours: updatedTask.hours || t.hours,
+                details: updatedTask.details || t.details
               };
             }
             return t;
