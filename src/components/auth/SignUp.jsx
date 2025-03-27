@@ -51,10 +51,22 @@ export const SignUp = () => {
       
       navigate('/todolist');
     } catch (err) {
-      setError(err.response?.data?.msg || 'Registration failed, please try again later');
-      console.error('Registration error:', err);
-    } finally {
+      console.error('Signup error:', err);
       setLoading(false);
+      
+      if (err.response && err.response.data && err.response.data.message) {
+        if (err.response.data.message.includes('duplicate')) {
+          setError('This username is already taken. Please choose another one.');
+        } else if (err.response.data.message.includes('password')) {
+          setError('Password must be at least 6 characters long and include a mix of letters and numbers.');
+        } else {
+          setError(err.response.data.message);
+        }
+      } else if (err.message === 'Network Error') {
+        setError('Unable to connect to the server. Please check your internet connection.');
+      } else {
+        setError('Unable to create your account at this time. Please try again later.');
+      }
     }
   };
 

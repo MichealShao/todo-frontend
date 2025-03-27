@@ -31,10 +31,18 @@ export const Login = () => {
       await authAPI.login({ email: formData.email, password: formData.password });
       navigate('/todolist');
     } catch (err) {
-      setError(err.response?.data?.msg || 'Login failed, please check your credentials');
       console.error('Login error:', err);
-    } finally {
       setLoading(false);
+      
+      if (err.response && err.response.status === 401) {
+        setError('Username or password is incorrect. Please try again.');
+      } else if (err.response && err.response.status === 400) {
+        setError('Please enter a valid username and password.');
+      } else if (err.message === 'Network Error') {
+        setError('Unable to connect to the server. Please check your internet connection.');
+      } else {
+        setError('Unable to log in at this time. Please try again later.');
+      }
     }
   };
 

@@ -132,4 +132,30 @@ export const tasksAPI = {
   }
 };
 
+// 添加错误信息转换函数
+const getReadableErrorMessage = (error) => {
+  if (!error.response) {
+    return 'Unable to connect to the server. Please check your internet connection.';
+  }
+  
+  const status = error.response.status;
+  
+  switch (status) {
+    case 400:
+      return 'The information you provided is invalid. Please check and try again.';
+    case 401:
+      return 'You need to log in again to continue.';
+    case 403:
+      return 'You do not have permission to perform this action.';
+    case 404:
+      return 'The requested information could not be found.';
+    case 409:
+      return 'This information conflicts with existing data.';
+    case 500:
+      return 'Something went wrong on our server. Please try again later.';
+    default:
+      return 'An unexpected error occurred. Please try again.';
+  }
+};
+
 export default api; 
