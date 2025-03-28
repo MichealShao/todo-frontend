@@ -135,17 +135,28 @@ export const tasksAPI = {
   // Create new task
   createTask: async (taskData) => {
     try {
-      // Remove createdAt field and only keep necessary fields
+      // 规范化任务数据
       const normalizedTask = {
-        ...taskData,
+        priority: taskData.priority,
         deadline: taskData.deadline,
-        start_time: taskData.startTime,
-        startTime: undefined
+        hours: parseInt(taskData.hours, 10),
+        details: taskData.details.trim(),
+        status: taskData.status,
+        start_time: taskData.startTime || null,  // 确保 start_time 为 null 而不是空字符串
+        displayId: taskData.displayId
       };
+      
+      // 移除 undefined 和空字符串的字段
+      Object.keys(normalizedTask).forEach(key => {
+        if (normalizedTask[key] === undefined || normalizedTask[key] === '') {
+          delete normalizedTask[key];
+        }
+      });
       
       console.log('Sending data to API:', normalizedTask);
       const response = await api.post('/api/tasks', normalizedTask);
       
+      // 转换响应数据
       const responseWithStartTime = {
         ...response.data,
         startTime: response.data.start_time
@@ -153,7 +164,7 @@ export const tasksAPI = {
       
       return responseWithStartTime;
     } catch (error) {
-      console.error('Create task error:', error.response?.data || error.message);
+      console.error('Create task error:', error.response?.data?.message || error.message);
       throw error;
     }
   },

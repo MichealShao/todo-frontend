@@ -588,11 +588,19 @@ function TodoList() {
       const taskData = {
         priority: formData.priority || 'Medium',
         deadline: formData.deadline,
-        hours: formData.hours ? parseInt(formData.hours, 10) : 1,
-        status: mapStatusToApi(formData.status), // 转换状态为 API 格式
+        hours: parseInt(formData.hours, 10) || 1,
+        status: mapStatusToApi(formData.status),
         details: formData.details.trim(),
-        startTime: formData.startTime
+        startTime: formData.startTime || null,
+        displayId: generateDisplayId()
       };
+
+      // 移除任何 undefined 或空字符串的字段
+      Object.keys(taskData).forEach(key => {
+        if (taskData[key] === undefined || taskData[key] === '') {
+          delete taskData[key];
+        }
+      });
 
       if (showEditModal) {
         // Edit mode
@@ -621,29 +629,23 @@ function TodoList() {
         
         closeEditModal();
       } else {
-        // Add mode - 生成新的 ID
+        // Add mode
         try {
-          const displayId = generateDisplayId();
-          const taskWithCreatedAt = {
-            ...taskData,
-            displayId, // 添加生成的 ID
-            deadline: normalizeDateString(taskData.deadline),
-          };
-          
-          const newTask = await tasksAPI.createTask(taskWithCreatedAt);
+          const newTask = await tasksAPI.createTask(taskData);
           
           setTasks((prev) => [...prev, {
             ...newTask,
-            displayId // 确保使用生成的 ID
+            displayId: taskData.displayId
           }]);
           
           closeAddModal();
         } catch (err) {
-          if (err.message === 'Maximum ID limit reached') {
-            setError('Cannot create new task: Maximum ID limit reached');
-            return;
+          console.error('Task creation failed:', err);
+          if (err.response?.status === 500) {
+            setError('Server error occurred. Please try again later.');
+          } else {
+            setError('Unable to create the task. Please try again.');
           }
-          throw err;
         }
       }
     } catch (err) {
