@@ -1257,7 +1257,7 @@ function TodoList() {
                   </div>
                   <div className="mb-3">
                     <label htmlFor="updateStartTime" className="form-label fw-bold">
-                      Start Date {(formData.status === 'In Progress' || formData.status === 'Completed') && 
+                      Start Date {(formData.status === 'In Progress' || formData.status === 'Done') && 
                       <span className="text-danger">*</span>}
                     </label>
                     <input
@@ -1267,13 +1267,19 @@ function TodoList() {
                       value={formData.startTime || ''}
                       onChange={(e) => {
                         const newStartTime = e.target.value;
-                        setFormData({ ...formData, startTime: newStartTime });
+                        setFormData({ 
+                          ...formData, 
+                          startTime: newStartTime,
+                          // 如果新的 start date 晚于现有的 due date，清空 due date
+                          deadline: formData.deadline && newStartTime > formData.deadline ? '' : formData.deadline
+                        });
                       }}
-                      required={formData.status === 'In Progress' || formData.status === 'Completed'}
+                      required={formData.status === 'In Progress' || formData.status === 'Done'}
+                      max={formData.deadline || undefined} // 限制 start date 不能晚于 due date
                     />
-                    {(formData.status === 'In Progress' || formData.status === 'Completed') && (
+                    {(formData.status === 'In Progress' || formData.status === 'Done') && (
                       <small className="text-muted">
-                        Start date is required for In Progress and Completed tasks.
+                        Required for In Progress and Done tasks
                       </small>
                     )}
                   </div>
@@ -1288,22 +1294,11 @@ function TodoList() {
                       value={formData.deadline || ''}
                       onChange={(e) => {
                         const newDeadline = e.target.value;
-                        // 验证 deadline 不能早于 start time
-                        if (formData.startTime && newDeadline < formData.startTime) {
-                          setError('Due date must be after the start date.');
-                          return;
-                        }
                         setFormData({ ...formData, deadline: newDeadline });
-                        setError(null);
                       }}
-                      min={formData.startTime || getTodayDateString()} // 设置最小日期为 start time 或今天
+                      min={formData.startTime || getTodayDateString()} // 限制 due date 不能早于 start date 或今天
                       required
                     />
-                    {formData.startTime && (
-                      <small className="text-muted">
-                        Due date must be on or after {formatDate(formData.startTime)}
-                      </small>
-                    )}
                   </div>
                   <div className="mb-3">
                     <label className="form-label">
