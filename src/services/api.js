@@ -119,7 +119,7 @@ export const tasksAPI = {
     try {
       const response = await api.get(`/api/tasks/${id}`);
       
-      // 映射 start_time 到 startTime
+      // Map start_time to startTime for frontend consistency
       const taskWithStartTime = {
         ...response.data,
         startTime: response.data.start_time
@@ -135,18 +135,18 @@ export const tasksAPI = {
   // Create new task
   createTask: async (taskData) => {
     try {
-      // 规范化任务数据
+      // Normalize task data
       const normalizedTask = {
         priority: taskData.priority,
         deadline: taskData.deadline,
         hours: parseInt(taskData.hours, 10),
         details: taskData.details.trim(),
         status: taskData.status,
-        start_time: taskData.startTime || null,  // 确保 start_time 为 null 而不是空字符串
+        start_time: taskData.startTime || null,  // Ensure start_time is null instead of empty string
         displayId: taskData.displayId
       };
       
-      // 移除 undefined 和空字符串的字段
+      // Remove undefined and empty string fields
       Object.keys(normalizedTask).forEach(key => {
         if (normalizedTask[key] === undefined || normalizedTask[key] === '') {
           delete normalizedTask[key];
@@ -156,7 +156,7 @@ export const tasksAPI = {
       console.log('Sending data to API:', normalizedTask);
       const response = await api.post('/api/tasks', normalizedTask);
       
-      // 转换响应数据
+      // Transform response data for frontend
       const responseWithStartTime = {
         ...response.data,
         startTime: response.data.start_time
@@ -172,18 +172,18 @@ export const tasksAPI = {
   // Update task
   updateTask: async (taskId, taskData) => {
     try {
-      // Ensure correct date format and map startTime to start_time
+      // Normalize task data and map fields
       const normalizedTask = {
         ...taskData,
         deadline: taskData.deadline,
-        start_time: taskData.startTime, // Map field
-        startTime: undefined // Remove redundant field
+        start_time: taskData.startTime, // Map frontend field to backend
+        startTime: undefined // Remove frontend field
       };
       
       console.log('Updating task with data:', normalizedTask);
       const response = await api.put(`/api/tasks/${taskId}`, normalizedTask);
       
-      // Map response data, convert start_time to startTime
+      // Transform response data for frontend
       const responseWithStartTime = {
         ...response.data,
         startTime: response.data.start_time
