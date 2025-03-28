@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Create API base configuration
-const API_BASE_URL = 'https://todo-backend-mocha-iota.vercel.app'; // 更新为新的后端API地址
+const API_BASE_URL = 'https://todo-backend-mocha-iota.vercel.app'; // Update with new backend API address
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -95,18 +95,18 @@ export const tasksAPI = {
     try {
       const response = await api.get('/api/tasks');
       
-      // 将后端返回的 start_time 字段映射为前端的 startTime
+      // Map backend start_time field to frontend startTime
       if (response.data && response.data.tasks && Array.isArray(response.data.tasks)) {
         response.data.tasks = response.data.tasks.map(task => ({
           ...task,
-          startTime: task.start_time, // 映射字段
+          startTime: task.start_time, // Map field
         }));
       }
       
       return response.data;
     } catch (error) {
       console.error('Get tasks error:', error.response?.data || error.message || 'Unknown error');
-      // 如果没有响应，可能是网络问题
+      // If no response, might be network issue
       if (!error.response) {
         throw new Error('Network Error: Unable to connect to the server');
       }
@@ -161,19 +161,18 @@ export const tasksAPI = {
   // Update task
   updateTask: async (taskId, taskData) => {
     try {
-      // 确保日期格式正确并将startTime映射为start_time
+      // Ensure correct date format and map startTime to start_time
       const normalizedTask = {
         ...taskData,
         deadline: taskData.deadline,
-        start_time: taskData.startTime, // 映射字段
-        // 不要包含startTime字段，避免冗余
-        startTime: undefined
+        start_time: taskData.startTime, // Map field
+        startTime: undefined // Remove redundant field
       };
       
       console.log('Updating task with data:', normalizedTask);
       const response = await api.put(`/api/tasks/${taskId}`, normalizedTask);
       
-      // 映射返回的数据，将start_time变为startTime
+      // Map response data, convert start_time to startTime
       const responseWithStartTime = {
         ...response.data,
         startTime: response.data.start_time

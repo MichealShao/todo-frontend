@@ -146,6 +146,46 @@ const CalendarView = ({ datesWithDeadlines, onSelectDate, selectedDate }) => {
   );
 };
 
+// Task status constants
+const TASK_STATUS = {
+  TODO: 'To Do',
+  IN_PROGRESS: 'In Progress',
+  DONE: 'Done',
+  EXPIRED: 'Expired'
+};
+
+// Map frontend status to API status
+const mapStatusToApi = (status) => {
+  switch (status) {
+    case TASK_STATUS.TODO:
+      return 'Pending';
+    case TASK_STATUS.IN_PROGRESS:
+      return 'In Progress';
+    case TASK_STATUS.DONE:
+      return 'Completed';
+    case TASK_STATUS.EXPIRED:
+      return 'Expired';
+    default:
+      return status;
+  }
+};
+
+// API 状态映射到显示状态
+const mapApiToStatus = (apiStatus) => {
+  switch (apiStatus) {
+    case 'Pending':
+      return TASK_STATUS.TODO;
+    case 'In Progress':
+      return TASK_STATUS.IN_PROGRESS;
+    case 'Completed':
+      return TASK_STATUS.DONE;
+    case 'Expired':
+      return TASK_STATUS.EXPIRED;
+    default:
+      return apiStatus;
+  }
+};
+
 function TodoList() {
   const navigate = useNavigate();
 
@@ -242,13 +282,14 @@ function TodoList() {
       const response = await tasksAPI.getAllTasks();
       console.log('Fetched task data:', response);
       
-      // Generate display ID for each task
-      const tasksWithDisplayId = response.tasks.map(task => ({
+      // 转换 API 返回的状态为显示状态
+      const tasksWithDisplayStatus = response.tasks.map(task => ({
         ...task,
-        displayId: task.displayId || generateDisplayId()
+        displayId: task.displayId || generateDisplayId(),
+        status: mapApiToStatus(task.status)
       }));
       
-      setTasks(tasksWithDisplayId);
+      setTasks(tasksWithDisplayStatus);
       
       // Update pagination info
       if (response.pagination) {
@@ -347,25 +388,25 @@ function TodoList() {
     }));
   };
 
-  // 添加按钮防抖函数
+  // Prevent duplicate operations
   const debounceOperation = (operationId, callback, delay = 1000) => {
     if (disabledButtons[operationId]) {
-      return; // 如果按钮已被禁用，直接返回
+      return; // If button is disabled, return immediately
     }
     
-    // 设置按钮为禁用状态
+    // Set button to disabled state
     setDisabledButtons(prev => ({ ...prev, [operationId]: true }));
     
-    // 执行回调
+    // Execute callback
     callback();
     
-    // 延迟后启用按钮
+    // Enable button after delay
     setTimeout(() => {
       setDisabledButtons(prev => ({ ...prev, [operationId]: false }));
     }, delay);
   };
 
-  // 获取今天的日期，使用本地时区而非UTC
+  // Get today's date in local timezone
   const getTodayDateString = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -374,15 +415,14 @@ function TodoList() {
     return `${year}-${month}-${day}`;
   };
 
-  // 确保日期字符串不受时区影响 - 保持YYYY-MM-DD格式
+  // Ensure date string is not affected by timezone - maintain YYYY-MM-DD format
   const normalizeDateString = (dateStr) => {
     if (!dateStr) return "";
-    // 如果已经是YYYY-MM-DD格式，直接返回
+    // If already in YYYY-MM-DD format, return as is
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
     
-    // 对于后端返回的日期，特殊处理UTC时区问题
+    // For dates from backend, handle UTC timezone issue
     const date = new Date(dateStr);
-    // 使用 UTC 日期来避免时区偏移问题
     const year = date.getUTCFullYear();
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
     const day = String(date.getUTCDate()).padStart(2, '0');
@@ -549,7 +589,7 @@ function TodoList() {
         priority: formData.priority || 'Medium',
         deadline: formData.deadline,
         hours: formData.hours ? parseInt(formData.hours, 10) : 1,
-        status: formData.status || 'Pending',
+        status: mapStatusToApi(formData.status), // 转换状态为 API 格式
         details: formData.details.trim(),
         startTime: formData.startTime
       };
@@ -725,9 +765,7 @@ function TodoList() {
     // 获取今天的日期字符串，用于比较
     const todayStr = getTodayDateString();
     
-    // First copy the array to avoid direct modification of the original
     return [...tasks]
-      // First mark expired tasks
       .map(task => {
         const taskCopy = {...task};
         
@@ -742,63 +780,25 @@ function TodoList() {
         
         return taskCopy;
       })
-      // Apply status filter
-      .filter(task => {
-        if (!filters.status) return true;
-        return task.status === filters.status;
-      })
-      // Apply priority filter
-      .filter(task => {
-        if (!filters.priority) return true;
-        return task.priority === filters.priority;
-      })
-      // Apply search filter
-      .filter(task => {
-        if (!searchQuery) return true;
-        
-        const query = searchQuery.toLowerCase();
-        return (
-          (task.details && task.details.toLowerCase().includes(query)) ||
-          (task.status && task.status.toLowerCase().includes(query)) ||
-          (task.priority && task.priority.toLowerCase().includes(query)) ||
-          (task.displayId && task.displayId.toLowerCase().includes(query))
-        );
-      })
-      // Sort tasks
       .sort((a, b) => {
-        // 首先区分活跃和不活跃任务
+        // First separate active and inactive tasks
         const aIsInactive = a.status === 'Completed' || a.status === 'Expired';
         const bIsInactive = b.status === 'Completed' || b.status === 'Expired';
         
-        // 活跃任务排在不活跃任务上面
+        // Active tasks above inactive ones
         if (aIsInactive && !bIsInactive) return 1;
         if (!aIsInactive && bIsInactive) return -1;
         
-        // 如果都是活跃任务
+        // For active tasks
         if (!aIsInactive && !bIsInactive) {
-          // 默认按照 ID 倒序排列
+          // Sort by ID in descending order
           return parseInt(b.displayId) - parseInt(a.displayId);
         }
         
-        // 如果都是不活跃任务（Expired 或 Completed）
+        // For inactive tasks (Expired or Completed)
         if (aIsInactive && bIsInactive) {
-          // 按照 deadline 倒序排列
+          // Sort by deadline in descending order
           return b.deadline.localeCompare(a.deadline);
-        }
-        
-        // 如果走到这里，说明任务状态相同，按照当前排序字段排序
-        if (sortOptions.sortField) {
-          const aValue = a[sortOptions.sortField];
-          const bValue = b[sortOptions.sortField];
-          
-          // Handle different types of values
-          if (aValue === bValue) return 0;
-          if (aValue === undefined || aValue === null) return 1;
-          if (bValue === undefined || bValue === null) return -1;
-          
-          // Return comparison result based on sort direction
-          const direction = sortOptions.sortDirection === 'asc' ? 1 : -1;
-          return aValue < bValue ? -1 * direction : 1 * direction;
         }
         
         return 0;
@@ -942,10 +942,10 @@ function TodoList() {
                   className="filter-select"
                 >
                   <option value="">All Statuses</option>
-                  <option value="Pending">To Do</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Done</option>
-                  <option value="Expired">Expired</option>
+                  <option value={TASK_STATUS.TODO}>To Do</option>
+                  <option value={TASK_STATUS.IN_PROGRESS}>In Progress</option>
+                  <option value={TASK_STATUS.DONE}>Done</option>
+                  <option value={TASK_STATUS.EXPIRED}>Expired</option>
                 </select>
                 <i className="fas fa-filter filter-icon"></i>
               </div>
@@ -1100,7 +1100,7 @@ function TodoList() {
                                 task.status === 'In Progress' ? 'bg-primary' :
                                 task.status === 'Expired' ? 'bg-secondary' : 'bg-warning text-dark'
                               }`}>
-                                {task.status}
+                                {mapApiToStatus(task.status)}
                               </span>
                             </td>
                             <td className="text-center">{formatDate(task.deadline)}</td>
@@ -1235,18 +1235,19 @@ function TodoList() {
                       value={formData.status}
                       onChange={(e) =>
                         setFormData(prev => {
-                          // Reset start time when changing to Pending
-                          if (e.target.value === 'Pending') {
-                            return { ...prev, status: e.target.value, startTime: '' };
+                          const newStatus = e.target.value;
+                          // Reset start time when changing to To Do
+                          if (newStatus === TASK_STATUS.TODO) {
+                            return { ...prev, status: newStatus, startTime: '' };
                           }
-                          return { ...prev, status: e.target.value };
+                          return { ...prev, status: newStatus };
                         })
                       }
                       className="form-select"
                     >
-                      <option value="Pending">To Do</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Completed">Done</option>
+                      <option value={TASK_STATUS.TODO}>To Do</option>
+                      <option value={TASK_STATUS.IN_PROGRESS}>In Progress</option>
+                      <option value={TASK_STATUS.DONE}>Done</option>
                     </select>
                     {formData.status === 'Expired' && (
                       <small className="form-text text-muted">
