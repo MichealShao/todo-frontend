@@ -164,19 +164,16 @@ function TodoList() {
 
   // Generate short but unique display ID (based on date + random number)
   const generateDisplayId = (task) => {
-    // Use creation date (if available) or current date
-    const dateStr = task.createdAt || new Date().toISOString();
-    const date = new Date(dateStr);
+    // Find the maximum ID in the current task list
+    const maxId = tasks.reduce((max, t) => {
+      const currentId = parseInt(t.displayId || '0', 10);
+      return currentId > max ? currentId : max;
+    }, 0);
     
-    // Format: YYMMDD-RRR (year-month-day-3-digit random number)
-    const yy = date.getFullYear().toString().slice(2);
-    const mm = (date.getMonth() + 1).toString().padStart(2, '0');
-    const dd = date.getDate().toString().padStart(2, '0');
-    
-    // Generate 3-digit random number (100-999)
-    const randomNum = Math.floor(100 + Math.random() * 900);
-    
-    return `${yy}${mm}${dd}-${randomNum}`;
+    // Generate new ID by incrementing the max ID
+    const newId = (maxId + 1) % 1000000;
+    // Pad with zeros to ensure 6 digits
+    return String(newId).padStart(6, '0');
   };
 
   // Pagination related states
@@ -514,48 +511,34 @@ function TodoList() {
     setIsProcessing(true);
 
     try {
-      // Make sure deadline is not earlier than start time if start time is set
-      if (formData.startTime && formData.deadline) {
-        if (new Date(formData.deadline) < new Date(formData.startTime)) {
-          setError("Deadline cannot be earlier than Start Time. Please adjust the dates.");
-          setIsProcessing(false);
-          return;
-        }
-      }
-
       // Validate form data
       if (!formData.details || formData.details.trim() === '') {
         setError('Please enter task details. This field cannot be empty.');
         setIsProcessing(false);
         return;
       }
-      
-      // 使用本地时区获取今天的日期字符串
-      const currentDateStr = getTodayDateString();
-      
-      // For new tasks, validate deadline is not before current date
-      if (formData.deadline < currentDateStr) {
-        setError('Deadline cannot be before today. Please select today or a future date.');
+
+      // Validate start time for In Progress and Completed status
+      if ((formData.status === 'In Progress' || formData.status === 'Completed') && !formData.startTime) {
+        setError('Start time is required for In Progress and Completed tasks.');
         setIsProcessing(false);
         return;
       }
-      
-      // Validate deadline is not before start time
+
+      // Validate deadline is not before start time if start time is set
       if (formData.startTime && formData.deadline && formData.deadline < formData.startTime) {
         setError('Deadline cannot be earlier than Start Time. Please adjust the dates.');
         setIsProcessing(false);
         return;
       }
 
-      // 准备任务数据并确保日期格式正确
       const taskData = {
         priority: formData.priority || 'Medium',
-        deadline: formData.deadline || currentDateStr,
+        deadline: formData.deadline,
         hours: formData.hours ? parseInt(formData.hours, 10) : 1,
         status: formData.status || 'Pending',
         details: formData.details.trim(),
-        // 确保日期只包含日期部分，不包含时间部分
-        startTime: formData.startTime ? normalizeDateString(formData.startTime) : null
+        startTime: formData.startTime
       };
 
       if (showEditModal) {
@@ -609,7 +592,7 @@ function TodoList() {
       console.error('Failed to process task:', err);
       setError(showEditModal ? 'Failed to update task. Please try again.' : 'Failed to create task. Please try again.');
     } finally {
-      setTimeout(() => setIsProcessing(false), 500); // 延迟恢复状态
+      setTimeout(() => setIsProcessing(false), 500);
     }
   };
 
@@ -1294,7 +1277,8 @@ function TodoList() {
                   </div>
                   <div className="mb-3">
                     <label htmlFor="updateStartTime" className="form-label fw-bold">
-                      Start Time {formData.status === 'Pending' && <span className="text-danger">*</span>}
+                      Start Time {(formData.status === 'In Progress' || formData.status === 'Completed') && 
+                      <span className="text-danger">*</span>}
                     </label>
                     <input
                       type="date"
@@ -1302,26 +1286,16 @@ function TodoList() {
                       id="updateStartTime"
                       value={formData.startTime || ''}
                       onChange={(e) => {
-                        // 当Start Time改变时可能需要调整Deadline
                         const newStartTime = e.target.value;
-                        if (newStartTime && formData.deadline && newStartTime > formData.deadline) {
-                          // 如果新的开始时间晚于截止日期，则更新截止日期为开始时间
-                          setFormData({ 
-                            ...formData, 
-                            startTime: newStartTime, 
-                            deadline: newStartTime 
-                          });
-                        } else {
-                          setFormData({ ...formData, startTime: newStartTime });
-                        }
+                        setFormData({ ...formData, startTime: newStartTime });
                       }}
-                      disabled={formData.status === 'Pending'}
-                      min={getTodayDateString()}
-                      max={formData.deadline || undefined}
+                      required={formData.status === 'In Progress' || formData.status === 'Completed'}
                     />
-                    <small className="text-muted">
-                      Start time can only be set when task is In Progress or Completed.
-                    </small>
+                    {(formData.status === 'In Progress' || formData.status === 'Completed') && (
+                      <small className="text-muted">
+                        Start time is required for In Progress and Completed tasks.
+                      </small>
+                    )}
                   </div>
                   <div className="mb-3">
                     <label htmlFor="updateDeadline" className="form-label fw-bold">
@@ -1333,35 +1307,16 @@ function TodoList() {
                       id="updateDeadline"
                       value={formData.deadline || ''}
                       onChange={(e) => {
-                        // 当Deadline改变时可能需要调整Start Time
                         const newDeadline = e.target.value;
-                        if (formData.startTime && formData.startTime > newDeadline) {
-                          // 如果开始时间晚于新的截止日期，则清除开始时间
-                          if (formData.status === 'In Progress' || formData.status === 'Completed') {
-                            // 如果状态需要开始时间，则设置开始时间为截止日期
-                            setFormData({ 
-                              ...formData, 
-                              deadline: newDeadline, 
-                              startTime: newDeadline 
-                            });
-                          } else {
-                            // 否则清除开始时间
-                            setFormData({ 
-                              ...formData, 
-                              deadline: newDeadline, 
-                              startTime: '' 
-                            });
-                          }
-                        } else {
-                          setFormData({ ...formData, deadline: newDeadline });
-                        }
+                        setFormData({ ...formData, deadline: newDeadline });
                       }}
-                      min={formData.startTime || getTodayDateString()}
                       required
                     />
-                    <small className="text-muted">
-                      Deadline must be on or after the start time.
-                    </small>
+                    {formData.startTime && (
+                      <small className="text-muted">
+                        Deadline must be on or after the start time.
+                      </small>
+                    )}
                   </div>
                   <div className="mb-3">
                     <label className="form-label">

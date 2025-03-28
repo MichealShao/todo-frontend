@@ -135,20 +135,17 @@ export const tasksAPI = {
   // Create new task
   createTask: async (taskData) => {
     try {
-      // Ensure date format is correct and map startTime to start_time
+      // Remove createdAt field and only keep necessary fields
       const normalizedTask = {
         ...taskData,
         deadline: taskData.deadline,
-        start_time: taskData.startTime, // Map field
-        // Don't include startTime field to avoid redundancy
-        startTime: undefined,
-        createdAt: taskData.createdAt || new Date().toISOString().split('T')[0]
+        start_time: taskData.startTime,
+        startTime: undefined
       };
       
       console.log('Sending data to API:', normalizedTask);
       const response = await api.post('/api/tasks', normalizedTask);
       
-      // Map response data, convert start_time to startTime
       const responseWithStartTime = {
         ...response.data,
         startTime: response.data.start_time
