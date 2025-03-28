@@ -884,7 +884,7 @@ function TodoList() {
             <div className="stat-item">
               <i className="fas fa-calendar-day stat-icon"></i>
               <div className="stat-content">
-                <span className="stat-label">Today's Tasks</span>
+                <span className="stat-label">Tasks for Today</span>
                 <span className="stat-value">{todayTodoCount}</span>
               </div>
             </div>
@@ -894,8 +894,8 @@ function TodoList() {
               disabled={disabledButtons['addTask']}
             >
               <i className="fas fa-plus"></i>
-              <span className="d-none d-sm-inline">Add New Task</span>
-              <span className="d-inline d-sm-none">Add</span>
+              <span className="d-none d-sm-inline">New Task</span>
+              <span className="d-inline d-sm-none">New</span>
             </button>
             <button
               onClick={handleLogout}
@@ -919,7 +919,7 @@ function TodoList() {
                   type="text"
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  placeholder="Search tasks..."
+                  placeholder="Search in tasks..."
                   className="search-input"
                 />
                 <i className="fas fa-search search-icon"></i>
@@ -932,7 +932,7 @@ function TodoList() {
                 className={`calendar-button ${showCalendar ? 'active' : ''}`}
               >
                 <i className="fas fa-calendar-alt"></i>
-                <span className="d-none d-md-inline">Daily Deadlines</span>
+                <span className="d-none d-md-inline">Calendar View</span>
               </button>
               
               <div className="filter-select-container">
@@ -941,7 +941,7 @@ function TodoList() {
                   onChange={(e) => handleFilterChange('status', e.target.value)}
                   className="filter-select"
                 >
-                  <option value="">Status (All)</option>
+                  <option value="">All Statuses</option>
                   <option value="Pending">To Do</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Completed">Done</option>
@@ -956,7 +956,7 @@ function TodoList() {
                   onChange={(e) => handleFilterChange('priority', e.target.value)}
                   className="filter-select"
                 >
-                  <option value="">Priority (All)</option>
+                  <option value="">All Priorities</option>
                   <option value="High">High</option>
                   <option value="Medium">Medium</option>
                   <option value="Low">Low</option>
@@ -967,9 +967,10 @@ function TodoList() {
               <button 
                 onClick={resetFilters}
                 className="reset-button"
-                title="Reset sorting and filtering"
+                title="Clear all filters and sorting"
               >
-                <i className="fas fa-redo-alt"></i> <span className="d-none d-md-inline">Reset</span>
+                <i className="fas fa-undo-alt"></i>
+                <span className="d-none d-md-inline">Clear Filters</span>
               </button>
             </div>
           </div>
@@ -981,7 +982,7 @@ function TodoList() {
         {showCalendar ? (
           <div className="calendar-container-wrapper">
             <div className="calendar-header">
-              <h3>Daily Deadlines</h3>
+              <h3>Task Calendar</h3>
               <button className="close-calendar" onClick={closeCalendarAndReset}>
                 <i className="fas fa-times"></i>
               </button>
@@ -998,7 +999,7 @@ function TodoList() {
             {selectedDate && (
               <div className="selected-date-tasks">
                 <h4>
-                  Tasks Due on {selectedDate.toLocaleDateString('en-US', { 
+                  Tasks for {selectedDate.toLocaleDateString('en-US', { 
                     year: 'numeric', 
                     month: 'long', 
                     day: 'numeric',
@@ -1006,7 +1007,7 @@ function TodoList() {
                   })}
                 </h4>
                 {tasksBySelectedDate.length === 0 ? (
-                  <p className="no-tasks">No tasks due on this date</p>
+                  <p className="no-tasks">No tasks scheduled for this date</p>
                 ) : (
                   <ul className="date-tasks-list">
                     {tasksBySelectedDate.map(task => (
@@ -1053,7 +1054,7 @@ function TodoList() {
           <div className="task-table-container">
             {tasks.length === 0 ? (
               <div className="empty-state">
-                <p>No tasks yet. Click the "Add Task" button to create your first task.</p>
+                <p>No tasks yet. Click "New Task" to get started.</p>
               </div>
             ) : (
               <div className="card shadow-sm mb-4">
