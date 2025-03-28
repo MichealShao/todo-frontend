@@ -164,15 +164,26 @@ function TodoList() {
 
   // Generate short but unique display ID (based on date + random number)
   const generateDisplayId = (task) => {
-    // Find the maximum ID in the current task list
-    const maxId = tasks.reduce((max, t) => {
-      const currentId = parseInt(t.displayId || '0', 10);
-      return currentId > max ? currentId : max;
-    }, 0);
+    // 获取所有任务的 ID（包括已完成和过期的任务）
+    const allIds = tasks.map(t => parseInt(t.displayId || '0', 10));
     
-    // Generate new ID by incrementing the max ID
-    const newId = (maxId + 1) % 1000000;
-    // Pad with zeros to ensure 6 digits
+    // 如果没有任何任务，从 000001 开始
+    if (allIds.length === 0) {
+      return '000001';
+    }
+    
+    // 找到最大的 ID
+    const maxId = Math.max(...allIds);
+    
+    // 生成新的 ID（最大 ID + 1）
+    const newId = maxId + 1;
+    
+    // 确保 ID 不超过 999999
+    if (newId > 999999) {
+      throw new Error('Maximum ID limit reached');
+    }
+    
+    // 用零填充到 6 位数
     return String(newId).padStart(6, '0');
   };
 
@@ -568,25 +579,30 @@ function TodoList() {
         
         closeEditModal();
       } else {
-        // Add mode
-        const taskWithCreatedAt = {
-          ...taskData,
-          // 使用标准化的日期格式
-          deadline: normalizeDateString(taskData.deadline),
-          createdAt: getTodayDateString() // 使用本地日期
-        };
-        
-        const newTask = await tasksAPI.createTask(taskWithCreatedAt);
-        
-        // Generate display ID for new task
-        const displayId = generateDisplayId(newTask);
-
-        setTasks((prev) => [...prev, {
-          ...newTask,
-          displayId: displayId
-        }]);
-        
-        closeAddModal();
+        // Add mode - 生成新的 ID
+        try {
+          const displayId = generateDisplayId();
+          const taskWithCreatedAt = {
+            ...taskData,
+            displayId, // 添加生成的 ID
+            deadline: normalizeDateString(taskData.deadline),
+          };
+          
+          const newTask = await tasksAPI.createTask(taskWithCreatedAt);
+          
+          setTasks((prev) => [...prev, {
+            ...newTask,
+            displayId // 确保使用生成的 ID
+          }]);
+          
+          closeAddModal();
+        } catch (err) {
+          if (err.message === 'Maximum ID limit reached') {
+            setError('Cannot create new task: Maximum ID limit reached');
+            return;
+          }
+          throw err;
+        }
       }
     } catch (err) {
       console.error('Failed to process task:', err);
@@ -702,26 +718,19 @@ function TodoList() {
   const filteredAndSortedTasks = useMemo(() => {
     if (!tasks || tasks.length === 0) return [];
     
-    // 使用本地时区获取今天的日期，而不是UTC
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0); // Set to start of day
-    
-    // 获取今天日期的字符串表示，用于比较
+    // 获取今天的日期字符串，用于比较
     const todayStr = getTodayDateString();
     
     // First copy the array to avoid direct modification of the original
     return [...tasks]
       // First mark expired tasks
       .map(task => {
-        // Copy task object to avoid modifying the original
         const taskCopy = {...task};
         
-        // Check if task is expired - for display purposes only, not persisted
+        // Check if task is expired
         if (task.status !== 'Completed') {
           if (!task.deadline) return taskCopy;
           
-          // 直接比较日期字符串，避免时区问题
-          // 只有当deadline严格小于今天的日期时，才标记为过期
           if (task.deadline < todayStr) {
             taskCopy.status = 'Expired';
           }
@@ -743,7 +752,6 @@ function TodoList() {
       .filter(task => {
         if (!searchQuery) return true;
         
-        // Search across various task fields
         const query = searchQuery.toLowerCase();
         return (
           (task.details && task.details.toLowerCase().includes(query)) ||
@@ -752,30 +760,41 @@ function TodoList() {
           (task.displayId && task.displayId.toLowerCase().includes(query))
         );
       })
-      // Finally sort the results
+      // Sort tasks
       .sort((a, b) => {
-        // First check status - completed and expired tasks go to the bottom
+        // 首先区分活跃和不活跃任务
         const aIsInactive = a.status === 'Completed' || a.status === 'Expired';
         const bIsInactive = b.status === 'Completed' || b.status === 'Expired';
         
-        if (aIsInactive && !bIsInactive) return 1;  // a goes to the bottom
-        if (!aIsInactive && bIsInactive) return -1; // b goes to the bottom
+        // 活跃任务排在不活跃任务上面
+        if (aIsInactive && !bIsInactive) return 1;
+        if (!aIsInactive && bIsInactive) return -1;
         
-        // If both are inactive or both are active, then sort by the current sort field
-        if (aIsInactive === bIsInactive) {
-          if (sortOptions.sortField) {
-            const aValue = a[sortOptions.sortField];
-            const bValue = b[sortOptions.sortField];
-            
-            // Handle different types of values
-            if (aValue === bValue) return 0;
-            if (aValue === undefined || aValue === null) return 1;
-            if (bValue === undefined || bValue === null) return -1;
-            
-            // Return comparison result based on sort direction
-            const direction = sortOptions.sortDirection === 'asc' ? 1 : -1;
-            return aValue < bValue ? -1 * direction : 1 * direction;
-          }
+        // 如果都是活跃任务
+        if (!aIsInactive && !bIsInactive) {
+          // 默认按照 ID 倒序排列
+          return parseInt(b.displayId) - parseInt(a.displayId);
+        }
+        
+        // 如果都是不活跃任务（Expired 或 Completed）
+        if (aIsInactive && bIsInactive) {
+          // 按照 deadline 倒序排列
+          return b.deadline.localeCompare(a.deadline);
+        }
+        
+        // 如果走到这里，说明任务状态相同，按照当前排序字段排序
+        if (sortOptions.sortField) {
+          const aValue = a[sortOptions.sortField];
+          const bValue = b[sortOptions.sortField];
+          
+          // Handle different types of values
+          if (aValue === bValue) return 0;
+          if (aValue === undefined || aValue === null) return 1;
+          if (bValue === undefined || bValue === null) return -1;
+          
+          // Return comparison result based on sort direction
+          const direction = sortOptions.sortDirection === 'asc' ? 1 : -1;
+          return aValue < bValue ? -1 * direction : 1 * direction;
         }
         
         return 0;
@@ -1275,13 +1294,20 @@ function TodoList() {
                       value={formData.deadline || ''}
                       onChange={(e) => {
                         const newDeadline = e.target.value;
+                        // 验证 deadline 不能早于 start time
+                        if (formData.startTime && newDeadline < formData.startTime) {
+                          setError('Deadline cannot be earlier than Start Time');
+                          return;
+                        }
                         setFormData({ ...formData, deadline: newDeadline });
+                        setError(null);
                       }}
+                      min={formData.startTime || getTodayDateString()} // 设置最小日期为 start time 或今天
                       required
                     />
                     {formData.startTime && (
                       <small className="text-muted">
-                        Deadline must be on or after the start time.
+                        Deadline must be on or after the start time ({formatDate(formData.startTime)}).
                       </small>
                     )}
                   </div>
