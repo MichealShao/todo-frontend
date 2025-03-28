@@ -17,6 +17,16 @@ import { tasksAPI, authAPI } from "../../services/api";
  * Also, Font Awesome needs to be imported in index.js or App.js.
  */
 
+/**
+ * TodoList Component
+ * Features:
+ * - Task listing with sorting and filtering
+ * - Task creation and editing
+ * - Task status management
+ * - Calendar view for due dates
+ * - Pagination
+ */
+
 // Calendar view component
 const CalendarView = ({ datesWithDeadlines, onSelectDate, selectedDate }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -163,27 +173,23 @@ function TodoList() {
   const [selectedDate, setSelectedDate] = useState(null);
 
   // Generate short but unique display ID (based on date + random number)
-  const generateDisplayId = (task) => {
-    // 获取所有任务的 ID（包括已完成和过期的任务）
+  const generateDisplayId = () => {
+    // Get all existing IDs including completed and expired tasks
     const allIds = tasks.map(t => parseInt(t.displayId || '0', 10));
     
-    // 如果没有任何任务，从 000001 开始
+    // Start from 000001 if no tasks exist
     if (allIds.length === 0) {
       return '000001';
     }
     
-    // 找到最大的 ID
+    // Generate next ID based on highest existing ID
     const maxId = Math.max(...allIds);
-    
-    // 生成新的 ID（最大 ID + 1）
     const newId = maxId + 1;
     
-    // 确保 ID 不超过 999999
     if (newId > 999999) {
       throw new Error('Maximum ID limit reached');
     }
     
-    // 用零填充到 6 位数
     return String(newId).padStart(6, '0');
   };
 
@@ -239,7 +245,7 @@ function TodoList() {
       // Generate display ID for each task
       const tasksWithDisplayId = response.tasks.map(task => ({
         ...task,
-        displayId: task.displayId || generateDisplayId(task)
+        displayId: task.displayId || generateDisplayId()
       }));
       
       setTasks(tasksWithDisplayId);
@@ -279,11 +285,7 @@ function TodoList() {
     if (!dateStr) return "";
     
     try {
-      // 确保使用一致的日期解析方式
-      // 创建日期对象但不转换时区
       const date = new Date(dateStr);
-      
-      // 对于UTC日期，使用toLocaleDateString确保正确显示本地日期
       return new Date(
         date.getUTCFullYear(),
         date.getUTCMonth(),
@@ -294,8 +296,8 @@ function TodoList() {
         day: "numeric",
       });
     } catch (error) {
-      console.error("日期格式化错误:", error);
-      return dateStr; // 如果解析失败，返回原始字符串
+      console.error("Date formatting error:", error);
+      return dateStr;
     }
   };
 
@@ -524,21 +526,21 @@ function TodoList() {
     try {
       // Validate form data
       if (!formData.details || formData.details.trim() === '') {
-        setError('Please enter task details. This field cannot be empty.');
+        setError('Please provide a description for the task.');
         setIsProcessing(false);
         return;
       }
 
-      // Validate start time for In Progress and Completed status
+      // Validate start date for In Progress and Done status
       if ((formData.status === 'In Progress' || formData.status === 'Completed') && !formData.startTime) {
-        setError('Start time is required for In Progress and Completed tasks.');
+        setError('Start date is required for tasks that are In Progress or Done.');
         setIsProcessing(false);
         return;
       }
 
-      // Validate deadline is not before start time if start time is set
+      // Validate due date is after start date
       if (formData.startTime && formData.deadline && formData.deadline < formData.startTime) {
-        setError('Deadline cannot be earlier than Start Time. Please adjust the dates.');
+        setError('Due date must be after the start date.');
         setIsProcessing(false);
         return;
       }
@@ -605,8 +607,10 @@ function TodoList() {
         }
       }
     } catch (err) {
-      console.error('Failed to process task:', err);
-      setError(showEditModal ? 'Failed to update task. Please try again.' : 'Failed to create task. Please try again.');
+      console.error('Task operation failed:', err);
+      setError(showEditModal ? 
+        'Unable to update the task. Please try again.' : 
+        'Unable to create the task. Please try again.');
     } finally {
       setTimeout(() => setIsProcessing(false), 500);
     }
@@ -938,9 +942,9 @@ function TodoList() {
                   className="filter-select"
                 >
                   <option value="">Status (All)</option>
-                  <option value="Pending">Pending</option>
+                  <option value="Pending">To Do</option>
                   <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
+                  <option value="Completed">Done</option>
                   <option value="Expired">Expired</option>
                 </select>
                 <i className="fas fa-filter filter-icon"></i>
@@ -1058,32 +1062,20 @@ function TodoList() {
                     <thead>
                       <tr className="text-center fs-6">
                         <th className="text-center">ID</th>
-                        <th className="sortable text-center" onClick={() => sortBy("priority")}>
-                          Priority 
-                          <i className={`fas ${sortOptions.sortField === 'priority' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`}></i>
+                        <th className="sortable text-center">
+                          Priority
                         </th>
-                        <th className="sortable text-center" onClick={() => sortBy("status")}>
-                          Status 
-                          <i className={`fas ${sortOptions.sortField === 'status' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`}></i>
+                        <th className="sortable text-center">
+                          Status
                         </th>
-                        <th className="sortable text-center" onClick={() => sortBy("deadline")}>
-                          Deadline 
-                          <i className={`fas ${sortOptions.sortField === 'deadline' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`}></i>
+                        <th className="sortable text-center">
+                          Due Date
                         </th>
-                        <th className="sortable text-center" onClick={() => sortBy("startTime")}>
-                          Start Time
-                          <i className={`fas ${sortOptions.sortField === 'startTime' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`}></i>
+                        <th className="sortable text-center">
+                          Started
                         </th>
-                        <th className="text-center">Est. Hours</th>
-                        <th className="text-center">Details</th>
+                        <th className="text-center">Time Est.</th>
+                        <th className="text-center">Description</th>
                         <th className="actions-header text-center">Actions</th>
                       </tr>
                     </thead>
@@ -1207,7 +1199,7 @@ function TodoList() {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  {showEditModal ? "Edit Task" : "Add New Task"}
+                  {showEditModal ? "Edit Task" : "New Task"}
                 </h5>
                 <button 
                   type="button" 
@@ -1251,9 +1243,9 @@ function TodoList() {
                       }
                       className="form-select"
                     >
-                      <option value="Pending">Pending</option>
+                      <option value="Pending">To Do</option>
                       <option value="In Progress">In Progress</option>
-                      <option value="Completed">Completed</option>
+                      <option value="Completed">Done</option>
                     </select>
                     {formData.status === 'Expired' && (
                       <small className="form-text text-muted">
@@ -1263,7 +1255,7 @@ function TodoList() {
                   </div>
                   <div className="mb-3">
                     <label htmlFor="updateStartTime" className="form-label fw-bold">
-                      Start Time {(formData.status === 'In Progress' || formData.status === 'Completed') && 
+                      Start Date {(formData.status === 'In Progress' || formData.status === 'Completed') && 
                       <span className="text-danger">*</span>}
                     </label>
                     <input
@@ -1279,13 +1271,13 @@ function TodoList() {
                     />
                     {(formData.status === 'In Progress' || formData.status === 'Completed') && (
                       <small className="text-muted">
-                        Start time is required for In Progress and Completed tasks.
+                        Start date is required for In Progress and Completed tasks.
                       </small>
                     )}
                   </div>
                   <div className="mb-3">
                     <label htmlFor="updateDeadline" className="form-label fw-bold">
-                      Deadline <span className="text-danger">*</span>
+                      Due Date <span className="text-danger">*</span>
                     </label>
                     <input
                       type="date"
@@ -1296,7 +1288,7 @@ function TodoList() {
                         const newDeadline = e.target.value;
                         // 验证 deadline 不能早于 start time
                         if (formData.startTime && newDeadline < formData.startTime) {
-                          setError('Deadline cannot be earlier than Start Time');
+                          setError('Due date must be after the start date.');
                           return;
                         }
                         setFormData({ ...formData, deadline: newDeadline });
@@ -1307,13 +1299,13 @@ function TodoList() {
                     />
                     {formData.startTime && (
                       <small className="text-muted">
-                        Deadline must be on or after the start time ({formatDate(formData.startTime)}).
+                        Due date must be on or after {formatDate(formData.startTime)}
                       </small>
                     )}
                   </div>
                   <div className="mb-3">
                     <label className="form-label">
-                      Estimated Hours <span className="text-danger">*</span>
+                      Time Estimate (hours) <span className="text-danger">*</span>
                     </label>
                     <input
                       type="number"
@@ -1328,7 +1320,7 @@ function TodoList() {
                   </div>
                   <div className="mb-3">
                     <label className="form-label">
-                      Details <span className="text-danger">*</span>
+                      Description <span className="text-danger">*</span>
                     </label>
                     <textarea
                       value={formData.details}
@@ -1407,7 +1399,7 @@ function TodoList() {
                     </div>
                   </div>
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Start Time</label>
+                    <label className="form-label fw-bold">Start Date</label>
                     <input
                       type="text"
                       value={viewingTask.startTime ? formatDate(viewingTask.startTime) : "None"}
@@ -1434,7 +1426,7 @@ function TodoList() {
                     />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Details</label>
+                    <label className="form-label fw-bold">Description</label>
                     <textarea
                       value={viewingTask.details}
                       rows="3"
@@ -1470,8 +1462,7 @@ function TodoList() {
               </div>
               <div className="modal-body">
                 <p>
-                  Are you sure you want to delete this task? This action cannot be
-                  undone.
+                  Are you sure you want to delete this task? This action cannot be undone.
                 </p>
               </div>
               <div className="modal-footer">
