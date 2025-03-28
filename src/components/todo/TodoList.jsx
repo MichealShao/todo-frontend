@@ -1043,53 +1043,27 @@ function TodoList() {
                           Priority 
                           <i className={`fas ${sortOptions.sortField === 'priority' 
                             ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'priority' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
-                                : 'Click for ascending order'
-                            }></i>
+                            : 'fa-sort'}`}></i>
                         </th>
                         <th className="sortable text-center" onClick={() => sortBy("status")}>
                           Status 
                           <i className={`fas ${sortOptions.sortField === 'status' 
                             ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'status' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
-                                : 'Click for ascending order'
-                            }></i>
+                            : 'fa-sort'}`}></i>
                         </th>
                         <th className="sortable text-center" onClick={() => sortBy("deadline")}>
                           Deadline 
                           <i className={`fas ${sortOptions.sortField === 'deadline' 
                             ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'deadline' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
-                                : 'Click for ascending order'
-                            }></i>
+                            : 'fa-sort'}`}></i>
                         </th>
                         <th className="sortable text-center" onClick={() => sortBy("startTime")}>
                           Start Time
                           <i className={`fas ${sortOptions.sortField === 'startTime' 
                             ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'startTime' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
-                                : 'Click for ascending order'
-                            }></i>
+                            : 'fa-sort'}`}></i>
                         </th>
                         <th className="text-center">Est. Hours</th>
-                        <th className="sortable text-center" onClick={() => sortBy("createdAt")}>
-                          Create Time
-                          <i className={`fas ${sortOptions.sortField === 'createdAt' 
-                            ? (sortOptions.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') 
-                            : 'fa-sort'}`} title={
-                              sortOptions.sortField === 'createdAt' 
-                                ? (sortOptions.sortDirection === 'asc' ? 'Click for descending order' : 'Click to cancel sorting') 
-                                : 'Click for ascending order'
-                            }></i>
-                        </th>
                         <th className="text-center">Details</th>
                         <th className="actions-header text-center">Actions</th>
                       </tr>
@@ -1120,7 +1094,6 @@ function TodoList() {
                             <td className="text-center">{formatDate(task.deadline)}</td>
                             <td className="text-center">{task.startTime ? formatDate(task.startTime) : "None"}</td>
                             <td className="text-center">{task.hours}h</td>
-                            <td className="text-center">{formatDate(task.createdAt)}</td>
                             <td className="text-start text-truncate" style={{ maxWidth: "150px" }}>
                               {task.details.length > 30 
                                 ? `${task.details.substring(0, 30)}...` 
@@ -1258,18 +1231,12 @@ function TodoList() {
                         })
                       }
                       className="form-select"
-                      disabled={showAddModal} // Disable status selection for new tasks
                     >
                       <option value="Pending">Pending</option>
                       <option value="In Progress">In Progress</option>
                       <option value="Completed">Completed</option>
                     </select>
-                    {showAddModal && (
-                      <small className="form-text text-muted">
-                        New tasks must be created with Pending status. You can update the status after creation.
-                      </small>
-                    )}
-                    {showEditModal && formData.status === 'Expired' && (
+                    {formData.status === 'Expired' && (
                       <small className="form-text text-muted">
                         The "Expired" status is automatically assigned by the system when a deadline has passed.
                       </small>
@@ -1448,15 +1415,6 @@ function TodoList() {
                       className="form-control bg-light"
                       readOnly
                     ></textarea>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Created At</label>
-                    <input
-                      type="text"
-                      value={formatDate(viewingTask.createdAt)}
-                      className="form-control bg-light"
-                      readOnly
-                    />
                   </div>
                 </div>
               </div>
