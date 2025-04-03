@@ -241,8 +241,8 @@ function TodoList() {
     pages: 0
   });
   const [sortOptions, setSortOptions] = useState({
-    field: 'deadline',
-    order: 'asc'
+    sortField: 'deadline',
+    sortDirection: 'asc'
   });
 
   // Control various modals
@@ -272,7 +272,7 @@ function TodoList() {
   // Fetch tasks when component loads
   useEffect(() => {
     fetchTasks();
-  }, [pagination.page, sortOptions.field, sortOptions.order]);
+  }, [pagination.page, sortOptions.sortField, sortOptions.sortDirection]);
 
   // Fetch task data from API
   const fetchTasks = async () => {
@@ -346,17 +346,27 @@ function TodoList() {
   // 4. Sort switch
   // ---------------------------
   const sortBy = (field) => {
-    setSortOptions(prev => ({
-      field,
-      order: prev.field === field && prev.order === 'asc' ? 'desc' : 'asc'
-    }));
+    if (sortOptions.sortField === field) {
+      // If already this field, loop switch: asc <-> desc
+      // Infinite loop switch sorting direction
+      setSortOptions({
+        sortField: field,
+        sortDirection: sortOptions.sortDirection === "asc" ? "desc" : "asc"
+      });
+    } else {
+      // New field, sort from small to large (first click)
+      setSortOptions({
+        sortField: field,
+        sortDirection: "asc"
+      });
+    }
   };
 
   // Reset sorting and filtering
   const resetFilters = () => {
     setSortOptions({
-      field: 'deadline',
-      order: 'asc'
+      sortField: 'deadline',
+      sortDirection: 'asc'
     });
     setSearchQuery('');
     setFilters({
@@ -752,50 +762,71 @@ function TodoList() {
 
   // Sort and filter tasks
   const filteredAndSortedTasks = useMemo(() => {
-    let result = [...tasks];
-
-    // 应用过滤器
-    if (filters.status) {
-      result = result.filter(task => task.status === filters.status);
-    }
-    if (filters.priority) {
-      result = result.filter(task => task.priority === filters.priority);
-    }
-    if (searchQuery) {
-      result = result.filter(task => 
-        task.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.displayId.toString().includes(searchQuery)
-      );
-    }
-
-    // 应用排序
-    if (sortOptions.field) {
-      result.sort((a, b) => {
-        let aValue = a[sortOptions.field];
-        let bValue = b[sortOptions.field];
-
-        // 特殊处理日期字段
-        if (sortOptions.field === 'startTime' || sortOptions.field === 'deadline') {
-          aValue = aValue ? new Date(aValue).getTime() : 0;
-          bValue = bValue ? new Date(bValue).getTime() : 0;
+    if (!tasks || tasks.length === 0) return [];
+    
+    // Get today's date string for comparison
+    const todayStr = getTodayDateString();
+    
+    return [...tasks]
+      .map(task => {
+        const taskCopy = {...task};
+        
+        // Check if task is expired
+        if (task.status !== 'Completed') {
+          if (!task.deadline) return taskCopy;
+          
+          if (task.deadline < todayStr) {
+            taskCopy.status = 'Expired';
+          }
         }
         
-        // 特殊处理数字字段
-        if (sortOptions.field === 'hours' || sortOptions.field === 'displayId') {
-          aValue = aValue || 0;
-          bValue = bValue || 0;
+        return taskCopy;
+      })
+      .sort((a, b) => {
+        // First separate active and inactive tasks
+        const aIsInactive = a.status === 'Completed' || a.status === 'Expired';
+        const bIsInactive = b.status === 'Completed' || b.status === 'Expired';
+        
+        // Active tasks above inactive ones
+        if (aIsInactive && !bIsInactive) return 1;
+        if (!aIsInactive && bIsInactive) return -1;
+        
+        // Apply user-selected sorting
+        if (sortOptions.sortField) {
+          const field = sortOptions.sortField;
+          const direction = sortOptions.sortDirection === 'asc' ? 1 : -1;
+          
+          switch (field) {
+            case 'priority':
+              const priorityOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+              return (priorityOrder[a.priority] - priorityOrder[b.priority]) * direction;
+              
+            case 'deadline':
+              if (!a.deadline) return direction;
+              if (!b.deadline) return -direction;
+              return (a.deadline.localeCompare(b.deadline)) * direction;
+              
+            case 'startTime':
+              if (!a.startTime) return direction;
+              if (!b.startTime) return -direction;
+              return (a.startTime.localeCompare(b.startTime)) * direction;
+              
+            case 'hours':
+              return (a.hours - b.hours) * direction;
+              
+            case 'status':
+              return (a.status.localeCompare(b.status)) * direction;
+              
+            default:
+              // Default sort by ID in descending order
+              return parseInt(b.displayId) - parseInt(a.displayId);
+          }
         }
-
-        if (sortOptions.order === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
+        
+        // Default sort by ID in descending order if no sort field specified
+        return parseInt(b.displayId) - parseInt(a.displayId);
       });
-    }
-
-    return result;
-  }, [tasks, filters, searchQuery, sortOptions]);
+  }, [tasks, sortOptions.sortField, sortOptions.sortDirection, searchQuery, filters]);
 
   // Calculate today's todo count after filteredAndSortedTasks memo
   const todayTodoCount = useMemo(() => {
@@ -1053,43 +1084,55 @@ function TodoList() {
                 <div className="card-body overflow-auto">
                   <table className="table table-hover align-middle">
                     <thead>
-                      <tr>
-                        <th className="sortable" onClick={() => sortBy('displayId')}>
-                          ID {sortOptions.field === 'displayId' && (
-                            <i className={`fas fa-sort-${sortOptions.order === 'asc' ? 'up' : 'down'}`} />
+                      <tr className="text-center fs-6">
+                        <th className="text-center">ID</th>
+                        <th 
+                          className="sortable text-center" 
+                          onClick={() => sortBy('priority')}
+                        >
+                          Priority
+                          {sortOptions.sortField === 'priority' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
                           )}
                         </th>
-                        <th className="sortable" onClick={() => sortBy('priority')}>
-                          Priority {sortOptions.field === 'priority' && (
-                            <i className={`fas fa-sort-${sortOptions.order === 'asc' ? 'up' : 'down'}`} />
+                        <th 
+                          className="sortable text-center"
+                          onClick={() => sortBy('status')}
+                        >
+                          Status
+                          {sortOptions.sortField === 'status' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
                           )}
                         </th>
-                        <th className="sortable" onClick={() => sortBy('details')}>
-                          Details {sortOptions.field === 'details' && (
-                            <i className={`fas fa-sort-${sortOptions.order === 'asc' ? 'up' : 'down'}`} />
+                        <th 
+                          className="sortable text-center"
+                          onClick={() => sortBy('deadline')}
+                        >
+                          Due Date
+                          {sortOptions.sortField === 'deadline' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
                           )}
                         </th>
-                        <th className="sortable" onClick={() => sortBy('startTime')}>
-                          Start Date {sortOptions.field === 'startTime' && (
-                            <i className={`fas fa-sort-${sortOptions.order === 'asc' ? 'up' : 'down'}`} />
+                        <th 
+                          className="sortable text-center"
+                          onClick={() => sortBy('startTime')}
+                        >
+                          Started
+                          {sortOptions.sortField === 'startTime' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
                           )}
                         </th>
-                        <th className="sortable" onClick={() => sortBy('deadline')}>
-                          Deadline {sortOptions.field === 'deadline' && (
-                            <i className={`fas fa-sort-${sortOptions.order === 'asc' ? 'up' : 'down'}`} />
+                        <th 
+                          className="sortable text-center"
+                          onClick={() => sortBy('hours')}
+                        >
+                          Time Est.
+                          {sortOptions.sortField === 'hours' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
                           )}
                         </th>
-                        <th className="sortable" onClick={() => sortBy('hours')}>
-                          Estimate Hours {sortOptions.field === 'hours' && (
-                            <i className={`fas fa-sort-${sortOptions.order === 'asc' ? 'up' : 'down'}`} />
-                          )}
-                        </th>
-                        <th className="sortable" onClick={() => sortBy('status')}>
-                          Status {sortOptions.field === 'status' && (
-                            <i className={`fas fa-sort-${sortOptions.order === 'asc' ? 'up' : 'down'}`} />
-                          )}
-                        </th>
-                        <th className="actions-header">Actions</th>
+                        <th className="text-center">Description</th>
+                        <th className="actions-header text-center">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1106,14 +1149,6 @@ function TodoList() {
                                 {task.priority}
                               </span>
                             </td>
-                            <td className="text-start text-truncate" style={{ maxWidth: "150px" }}>
-                              {task.details.length > 30 
-                                ? `${task.details.substring(0, 30)}...` 
-                                : task.details}
-                            </td>
-                            <td className="text-center">{task.startTime ? formatDate(task.startTime) : '-'}</td>
-                            <td className="text-center">{task.deadline ? formatDate(task.deadline) : '-'}</td>
-                            <td className="text-center">{task.hours || '-'}</td>
                             <td className="text-center">
                               <span className={`badge fs-6 ${
                                 task.status === 'Completed' ? 'bg-success' : 
@@ -1122,6 +1157,14 @@ function TodoList() {
                               }`}>
                                 {mapApiToStatus(task.status)}
                               </span>
+                            </td>
+                            <td className="text-center">{formatDate(task.deadline)}</td>
+                            <td className="text-center">{task.startTime ? formatDate(task.startTime) : "None"}</td>
+                            <td className="text-center">{task.hours}h</td>
+                            <td className="text-start text-truncate" style={{ maxWidth: "150px" }}>
+                              {task.details.length > 30 
+                                ? `${task.details.substring(0, 30)}...` 
+                                : task.details}
                             </td>
                             <td>
                               <div className="d-flex justify-content-center gap-2">
