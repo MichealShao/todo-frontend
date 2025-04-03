@@ -1117,18 +1117,18 @@ function TodoList() {
                           className="sortable text-center"
                           onClick={() => sortBy('startTime')}
                         >
-                          Start Time
+                          Started
                           {sortOptions.sortField === 'startTime' && (
-                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'}`} />
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
                           )}
                         </th>
                         <th 
                           className="sortable text-center"
                           onClick={() => sortBy('hours')}
                         >
-                          Hours
+                          Time Est.
                           {sortOptions.sortField === 'hours' && (
-                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'}`} />
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
                           )}
                         </th>
                         <th className="text-center">Description</th>
