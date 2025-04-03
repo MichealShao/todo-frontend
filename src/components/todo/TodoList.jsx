@@ -764,7 +764,7 @@ function TodoList() {
   const filteredAndSortedTasks = useMemo(() => {
     if (!tasks || tasks.length === 0) return [];
     
-    // 获取今天的日期字符串，用于比较
+    // Get today's date string for comparison
     const todayStr = getTodayDateString();
     
     return [...tasks]
@@ -791,19 +791,40 @@ function TodoList() {
         if (aIsInactive && !bIsInactive) return 1;
         if (!aIsInactive && bIsInactive) return -1;
         
-        // For active tasks
-        if (!aIsInactive && !bIsInactive) {
-          // Sort by ID in descending order
-          return parseInt(b.displayId) - parseInt(a.displayId);
+        // Apply user-selected sorting
+        if (sortOptions.sortField) {
+          const field = sortOptions.sortField;
+          const direction = sortOptions.sortDirection === 'asc' ? 1 : -1;
+          
+          switch (field) {
+            case 'priority':
+              const priorityOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+              return (priorityOrder[a.priority] - priorityOrder[b.priority]) * direction;
+              
+            case 'deadline':
+              if (!a.deadline) return direction;
+              if (!b.deadline) return -direction;
+              return (a.deadline.localeCompare(b.deadline)) * direction;
+              
+            case 'startTime':
+              if (!a.startTime) return direction;
+              if (!b.startTime) return -direction;
+              return (a.startTime.localeCompare(b.startTime)) * direction;
+              
+            case 'hours':
+              return (a.hours - b.hours) * direction;
+              
+            case 'status':
+              return (a.status.localeCompare(b.status)) * direction;
+              
+            default:
+              // Default sort by ID in descending order
+              return parseInt(b.displayId) - parseInt(a.displayId);
+          }
         }
         
-        // For inactive tasks (Expired or Completed)
-        if (aIsInactive && bIsInactive) {
-          // Sort by deadline in descending order
-          return b.deadline.localeCompare(a.deadline);
-        }
-        
-        return 0;
+        // Default sort by ID in descending order if no sort field specified
+        return parseInt(b.displayId) - parseInt(a.displayId);
       });
   }, [tasks, sortOptions.sortField, sortOptions.sortDirection, searchQuery, filters]);
 
@@ -1065,19 +1086,51 @@ function TodoList() {
                     <thead>
                       <tr className="text-center fs-6">
                         <th className="text-center">ID</th>
-                        <th className="sortable text-center">
+                        <th 
+                          className="sortable text-center" 
+                          onClick={() => sortBy('priority')}
+                        >
                           Priority
+                          {sortOptions.sortField === 'priority' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
+                          )}
                         </th>
-                        <th className="sortable text-center">
+                        <th 
+                          className="sortable text-center"
+                          onClick={() => sortBy('status')}
+                        >
                           Status
+                          {sortOptions.sortField === 'status' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
+                          )}
                         </th>
-                        <th className="sortable text-center">
+                        <th 
+                          className="sortable text-center"
+                          onClick={() => sortBy('deadline')}
+                        >
                           Due Date
+                          {sortOptions.sortField === 'deadline' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
+                          )}
                         </th>
-                        <th className="sortable text-center">
+                        <th 
+                          className="sortable text-center"
+                          onClick={() => sortBy('startTime')}
+                        >
                           Started
+                          {sortOptions.sortField === 'startTime' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
+                          )}
                         </th>
-                        <th className="text-center">Time Est.</th>
+                        <th 
+                          className="sortable text-center"
+                          onClick={() => sortBy('hours')}
+                        >
+                          Time Est.
+                          {sortOptions.sortField === 'hours' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
+                          )}
+                        </th>
                         <th className="text-center">Description</th>
                         <th className="actions-header text-center">Actions</th>
                       </tr>
