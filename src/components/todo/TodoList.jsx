@@ -1087,8 +1087,9 @@ function TodoList() {
                       <tr className="text-center fs-6">
                         <th className="text-center">ID</th>
                         <th 
-                          className="sortable text-center" 
+                          className="sortable text-center cursor-pointer" 
                           onClick={() => sortBy('priority')}
+                          style={{ cursor: 'pointer' }}
                         >
                           Priority
                           {sortOptions.sortField === 'priority' && (
@@ -1096,8 +1097,9 @@ function TodoList() {
                           )}
                         </th>
                         <th 
-                          className="sortable text-center"
+                          className="sortable text-center cursor-pointer"
                           onClick={() => sortBy('status')}
+                          style={{ cursor: 'pointer' }}
                         >
                           Status
                           {sortOptions.sortField === 'status' && (
@@ -1105,8 +1107,9 @@ function TodoList() {
                           )}
                         </th>
                         <th 
-                          className="sortable text-center"
+                          className="sortable text-center cursor-pointer"
                           onClick={() => sortBy('deadline')}
+                          style={{ cursor: 'pointer' }}
                         >
                           Due Date
                           {sortOptions.sortField === 'deadline' && (
@@ -1114,8 +1117,9 @@ function TodoList() {
                           )}
                         </th>
                         <th 
-                          className="sortable text-center"
+                          className="sortable text-center cursor-pointer"
                           onClick={() => sortBy('startTime')}
+                          style={{ cursor: 'pointer' }}
                         >
                           Start Date
                           {sortOptions.sortField === 'startTime' && (
@@ -1123,8 +1127,9 @@ function TodoList() {
                           )}
                         </th>
                         <th 
-                          className="sortable text-center"
+                          className="sortable text-center cursor-pointer"
                           onClick={() => sortBy('hours')}
+                          style={{ cursor: 'pointer' }}
                         >
                           Estimate Hours
                           {sortOptions.sortField === 'hours' && (
