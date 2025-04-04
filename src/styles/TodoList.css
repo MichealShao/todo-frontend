@@ -1397,4 +1397,23 @@ input[type="number"] {
   .date-task-title {
     max-width: 180px;
   }
+}
+
+/* 添加到现有 CSS 文件的底部 */
+.sortable {
+  position: relative;
+  cursor: pointer;
+}
+
+.sortable:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.sortable i {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.sortable:hover i {
+  opacity: 1;
 } 

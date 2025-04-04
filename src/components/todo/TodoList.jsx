@@ -1102,13 +1102,9 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           ID
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'displayId' && (
-                              sortOptions.sortDirection === 'asc' 
-                                ? <i className="fas fa-arrow-up text-primary"></i> 
-                                : <i className="fas fa-arrow-down text-primary"></i>
-                            )}
-                          </span>
+                          {sortOptions.sortField === 'displayId' && (
+                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
+                          )}
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1116,13 +1112,9 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Priority
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'priority' && (
-                              sortOptions.sortDirection === 'asc' 
-                                ? <i className="fas fa-arrow-up text-primary"></i> 
-                                : <i className="fas fa-arrow-down text-primary"></i>
-                            )}
-                          </span>
+                          {sortOptions.sortField === 'priority' && (
+                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
+                          )}
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1130,13 +1122,9 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Status
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'status' && (
-                              sortOptions.sortDirection === 'asc' 
-                                ? <i className="fas fa-arrow-up text-primary"></i> 
-                                : <i className="fas fa-arrow-down text-primary"></i>
-                            )}
-                          </span>
+                          {sortOptions.sortField === 'status' && (
+                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
+                          )}
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1144,13 +1132,9 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Due Date
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'deadline' && (
-                              sortOptions.sortDirection === 'asc' 
-                                ? <i className="fas fa-arrow-up text-primary"></i> 
-                                : <i className="fas fa-arrow-down text-primary"></i>
-                            )}
-                          </span>
+                          {sortOptions.sortField === 'deadline' && (
+                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
+                          )}
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1158,13 +1142,9 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Started
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'startTime' && (
-                              sortOptions.sortDirection === 'asc' 
-                                ? <i className="fas fa-arrow-up text-primary"></i> 
-                                : <i className="fas fa-arrow-down text-primary"></i>
-                            )}
-                          </span>
+                          {sortOptions.sortField === 'startTime' && (
+                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
+                          )}
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1172,13 +1152,9 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Time Est.
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'hours' && (
-                              sortOptions.sortDirection === 'asc' 
-                                ? <i className="fas fa-arrow-up text-primary"></i> 
-                                : <i className="fas fa-arrow-down text-primary"></i>
-                            )}
-                          </span>
+                          {sortOptions.sortField === 'hours' && (
+                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
+                          )}
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1186,13 +1162,9 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Description
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'details' && (
-                              sortOptions.sortDirection === 'asc' 
-                                ? <i className="fas fa-arrow-up text-primary"></i> 
-                                : <i className="fas fa-arrow-down text-primary"></i>
-                            )}
-                          </span>
+                          {sortOptions.sortField === 'details' && (
+                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
+                          )}
                         </th>
                         <th className="actions-header text-center">Actions</th>
                       </tr>
