@@ -1067,29 +1067,11 @@ function TodoList() {
                         <th className="text-center">
                           ID
                         </th>
-                        <th 
-                          className="sortable text-center" 
-                          onClick={() => sortBy('priority')}
-                          style={{ cursor: 'pointer' }}
-                        >
+                        <th className="text-center">
                           Priority
-                          <i className={`ms-2 fas ${
-                            sortOptions.sortField === 'priority' 
-                              ? `fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-primary` 
-                              : 'fa-sort text-secondary'
-                          }`}></i>
                         </th>
-                        <th 
-                          className="sortable text-center" 
-                          onClick={() => sortBy('status')}
-                          style={{ cursor: 'pointer' }}
-                        >
+                        <th className="text-center">
                           Status
-                          <i className={`ms-2 fas ${
-                            sortOptions.sortField === 'status' 
-                              ? `fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-primary` 
-                              : 'fa-sort text-secondary'
-                          }`}></i>
                         </th>
                         <th 
                           className="sortable text-center" 
