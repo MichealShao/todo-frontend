@@ -1102,9 +1102,11 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           ID
-                          {sortOptions.sortField === 'displayId' && (
-                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
-                          )}
+                          <i className={`ms-2 fas ${
+                            sortOptions.sortField === 'displayId' 
+                              ? `fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-primary` 
+                              : 'fa-sort text-secondary'
+                          }`}></i>
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1112,9 +1114,11 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Priority
-                          {sortOptions.sortField === 'priority' && (
-                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
-                          )}
+                          <i className={`ms-2 fas ${
+                            sortOptions.sortField === 'priority' 
+                              ? `fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-primary` 
+                              : 'fa-sort text-secondary'
+                          }`}></i>
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1122,9 +1126,11 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Status
-                          {sortOptions.sortField === 'status' && (
-                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
-                          )}
+                          <i className={`ms-2 fas ${
+                            sortOptions.sortField === 'status' 
+                              ? `fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-primary` 
+                              : 'fa-sort text-secondary'
+                          }`}></i>
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1132,9 +1138,11 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Due Date
-                          {sortOptions.sortField === 'deadline' && (
-                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
-                          )}
+                          <i className={`ms-2 fas ${
+                            sortOptions.sortField === 'deadline' 
+                              ? `fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-primary` 
+                              : 'fa-sort text-secondary'
+                          }`}></i>
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1142,9 +1150,11 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Started
-                          {sortOptions.sortField === 'startTime' && (
-                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
-                          )}
+                          <i className={`ms-2 fas ${
+                            sortOptions.sortField === 'startTime' 
+                              ? `fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-primary` 
+                              : 'fa-sort text-secondary'
+                          }`}></i>
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1152,9 +1162,11 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Time Est.
-                          {sortOptions.sortField === 'hours' && (
-                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
-                          )}
+                          <i className={`ms-2 fas ${
+                            sortOptions.sortField === 'hours' 
+                              ? `fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-primary` 
+                              : 'fa-sort text-secondary'
+                          }`}></i>
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1162,9 +1174,11 @@ function TodoList() {
                           style={{ cursor: 'pointer' }}
                         >
                           Description
-                          {sortOptions.sortField === 'details' && (
-                            <i className={`ms-2 fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-secondary`}></i>
-                          )}
+                          <i className={`ms-2 fas ${
+                            sortOptions.sortField === 'details' 
+                              ? `fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-primary` 
+                              : 'fa-sort text-secondary'
+                          }`}></i>
                         </th>
                         <th className="actions-header text-center">Actions</th>
                       </tr>
