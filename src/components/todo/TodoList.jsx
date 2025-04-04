@@ -241,8 +241,8 @@ function TodoList() {
     pages: 0
   });
   const [sortOptions, setSortOptions] = useState({
-    sortField: 'deadline',
-    sortDirection: 'asc'
+    sortField: 'displayId',
+    sortDirection: 'desc'
   });
 
   // Control various modals
@@ -346,27 +346,17 @@ function TodoList() {
   // 4. Sort switch
   // ---------------------------
   const sortBy = (field) => {
-    if (sortOptions.sortField === field) {
-      // If already this field, loop switch: asc <-> desc
-      // Infinite loop switch sorting direction
-      setSortOptions({
-        sortField: field,
-        sortDirection: sortOptions.sortDirection === "asc" ? "desc" : "asc"
-      });
-    } else {
-      // New field, sort from small to large (first click)
-      setSortOptions({
-        sortField: field,
-        sortDirection: "asc"
-      });
-    }
+    setSortOptions({
+      sortField: field,
+      sortDirection: sortOptions.sortField === field && sortOptions.sortDirection === "asc" ? "desc" : "asc"
+    });
   };
 
   // Reset sorting and filtering
   const resetFilters = () => {
     setSortOptions({
-      sortField: 'deadline',
-      sortDirection: 'asc'
+      sortField: 'displayId',
+      sortDirection: 'desc'
     });
     setSearchQuery('');
     setFilters({
@@ -809,23 +799,35 @@ function TodoList() {
       const aIsInactive = a.status === 'Completed' || a.status === 'Expired';
       const bIsInactive = b.status === 'Completed' || b.status === 'Expired';
       
-      // Active tasks above inactive ones
+      // Inactive tasks below active ones
       if (aIsInactive && !bIsInactive) return 1;
       if (!aIsInactive && bIsInactive) return -1;
       
-      // For active tasks
-      if (!aIsInactive && !bIsInactive) {
-        // Sort by ID in descending order
-        return parseInt(b.displayId) - parseInt(a.displayId);
+      // If both are active or both are inactive
+      if (sortOptions.sortField !== 'displayId') {
+        // Custom sorting based on selected field
+        const aValue = a[sortOptions.sortField];
+        const bValue = b[sortOptions.sortField];
+        
+        // Handle null values
+        if (!aValue && !bValue) return 0;
+        if (!aValue) return sortOptions.sortDirection === 'asc' ? 1 : -1;
+        if (!bValue) return sortOptions.sortDirection === 'asc' ? -1 : 1;
+        
+        // Compare values based on sort direction
+        if (sortOptions.sortDirection === 'asc') {
+          return aValue.toString().localeCompare(bValue.toString());
+        } else {
+          return bValue.toString().localeCompare(aValue.toString());
+        }
+      } else {
+        // Default sort by ID descending (larger IDs at top)
+        if (sortOptions.sortDirection === 'asc') {
+          return parseInt(a.displayId) - parseInt(b.displayId);
+        } else {
+          return parseInt(b.displayId) - parseInt(a.displayId);
+        }
       }
-      
-      // For inactive tasks (Expired or Completed)
-      if (aIsInactive && bIsInactive) {
-        // Sort by deadline in descending order
-        return b.deadline?.localeCompare(a.deadline || '') || 0;
-      }
-      
-      return 0;
     });
   }, [tasks, sortOptions.sortField, sortOptions.sortDirection, searchQuery, filters.status, filters.priority]);
 
@@ -1086,21 +1088,69 @@ function TodoList() {
                   <table className="table table-hover align-middle">
                     <thead>
                       <tr className="text-center fs-6">
-                        <th className="text-center">ID</th>
-                        <th className="sortable text-center">
+                        <th 
+                          className="text-center sortable" 
+                          onClick={() => sortBy('displayId')}
+                        >
+                          ID
+                          {sortOptions.sortField === 'displayId' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          )}
+                        </th>
+                        <th 
+                          className="sortable text-center" 
+                          onClick={() => sortBy('priority')}
+                        >
                           Priority
+                          {sortOptions.sortField === 'priority' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          )}
                         </th>
-                        <th className="sortable text-center">
+                        <th 
+                          className="sortable text-center" 
+                          onClick={() => sortBy('status')}
+                        >
                           Status
+                          {sortOptions.sortField === 'status' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          )}
                         </th>
-                        <th className="sortable text-center">
+                        <th 
+                          className="sortable text-center" 
+                          onClick={() => sortBy('deadline')}
+                        >
                           Due Date
+                          {sortOptions.sortField === 'deadline' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          )}
                         </th>
-                        <th className="sortable text-center">
+                        <th 
+                          className="sortable text-center" 
+                          onClick={() => sortBy('startTime')}
+                        >
                           Started
+                          {sortOptions.sortField === 'startTime' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          )}
                         </th>
-                        <th className="text-center">Time Est.</th>
-                        <th className="text-center">Description</th>
+                        <th 
+                          className="sortable text-center" 
+                          onClick={() => sortBy('hours')}
+                        >
+                          Time Est.
+                          {sortOptions.sortField === 'hours' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          )}
+                        </th>
+                        <th 
+                          className="sortable text-center" 
+                          onClick={() => sortBy('details')}
+                        >
+                          Description
+                          {sortOptions.sortField === 'details' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          )}
+                        </th>
                         <th className="actions-header text-center">Actions</th>
                       </tr>
                     </thead>
