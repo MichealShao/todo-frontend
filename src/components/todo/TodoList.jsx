@@ -172,6 +172,7 @@ const mapStatusToApi = (status) => {
 
 // API 状态映射到显示状态
 const mapApiToStatus = (apiStatus) => {
+  console.log('Mapping API status:', apiStatus); // 添加调试日志
   switch (apiStatus) {
     case 'Pending':
       return TASK_STATUS.TODO;
@@ -182,6 +183,11 @@ const mapApiToStatus = (apiStatus) => {
     case 'Expired':
       return TASK_STATUS.EXPIRED;
     default:
+      // 如果是前端状态值，直接返回
+      if (Object.values(TASK_STATUS).includes(apiStatus)) {
+        return apiStatus;
+      }
+      console.warn('Unknown status:', apiStatus);
       return apiStatus;
   }
 };
@@ -738,7 +744,12 @@ function TodoList() {
     
     // Filter by status
     if (filters.status !== '') {
-      result = result.filter(task => task.status === filters.status);
+      console.log('Filtering by status:', filters.status); // 添加调试日志
+      result = result.filter(task => {
+        const taskStatus = mapApiToStatus(task.status);
+        console.log('Task status:', task.status, 'Mapped status:', taskStatus, 'Filter value:', filters.status);
+        return taskStatus === filters.status;
+      });
     }
     
     // Filter by priority
@@ -944,10 +955,10 @@ function TodoList() {
                   className="filter-select"
                 >
                   <option value="">All Statuses</option>
-                  <option value={TASK_STATUS.TODO}>To Do</option>
-                  <option value={TASK_STATUS.IN_PROGRESS}>In Progress</option>
-                  <option value={TASK_STATUS.DONE}>Done</option>
-                  <option value={TASK_STATUS.EXPIRED}>Expired</option>
+                  <option value="To Do">To Do</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Done">Done</option>
+                  <option value="Expired">Expired</option>
                 </select>
                 <i className="fas fa-filter filter-icon"></i>
               </div>
