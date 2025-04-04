@@ -212,25 +212,28 @@ function TodoList() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
 
-  // Generate short but unique display ID (based on date + random number)
+  // 改进的 ID 生成策略：基于当前最大 ID 递增
   const generateDisplayId = () => {
-    // Get all existing IDs including completed and expired tasks
-    const allIds = tasks.map(t => parseInt(t.displayId || '0', 10));
-    
-    // Start from 000001 if no tasks exist
-    if (allIds.length === 0) {
-      return '000001';
+    try {
+      // 从所有任务中获取最大的 ID
+      const existingIds = tasks.map(task => {
+        // 确保 displayId 是数字格式
+        const idStr = task.displayId || '0';
+        return parseInt(idStr.replace(/^#/, ''), 10);
+      });
+      
+      // 找出最大 ID，如果没有任务则从 0 开始
+      const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
+      
+      // 新 ID 为最大 ID + 1，并格式化为6位数字（前导零）
+      const newId = String(maxId + 1).padStart(6, '0');
+      
+      return newId;
+    } catch (error) {
+      console.error("ID generation error:", error);
+      // 如果出错，回退到时间戳策略
+      return String(Date.now()).slice(-6).padStart(6, '0');
     }
-    
-    // Generate next ID based on highest existing ID
-    const maxId = Math.max(...allIds);
-    const newId = maxId + 1;
-    
-    if (newId > 999999) {
-      throw new Error('Maximum ID limit reached');
-    }
-    
-    return String(newId).padStart(6, '0');
   };
 
   // Pagination related states
@@ -576,23 +579,6 @@ function TodoList() {
         return;
       }
 
-      const taskData = {
-        priority: formData.priority || 'Medium',
-        deadline: formData.deadline,
-        hours: parseInt(formData.hours, 10) || 1,
-        status: mapStatusToApi(formData.status),
-        details: formData.details.trim(),
-        startTime: formData.startTime || null,
-        displayId: generateDisplayId()
-      };
-
-      // 移除任何 undefined 或空字符串的字段
-      Object.keys(taskData).forEach(key => {
-        if (taskData[key] === undefined || taskData[key] === '') {
-          delete taskData[key];
-        }
-      });
-
       if (showEditModal) {
         // Edit mode
         if (!editingTaskId) {
@@ -601,7 +587,7 @@ function TodoList() {
           return;
         }
         
-        const updatedTask = await tasksAPI.updateTask(editingTaskId, taskData);
+        const updatedTask = await tasksAPI.updateTask(editingTaskId, formData);
         
         setTasks((prev) => {
           return prev.map((t) => {
@@ -622,11 +608,25 @@ function TodoList() {
       } else {
         // Add mode
         try {
+          // 生成新的 ID
+          const newDisplayId = generateDisplayId();
+          
+          const taskData = {
+            priority: formData.priority || 'Medium',
+            deadline: formData.deadline,
+            hours: parseInt(formData.hours, 10) || 1,
+            status: mapStatusToApi(formData.status),
+            details: formData.details.trim(),
+            startTime: formData.startTime || null,
+            displayId: newDisplayId // 添加新生成的 ID
+          };
+          
           const newTask = await tasksAPI.createTask(taskData);
           
+          // 确保新任务在本地状态中保持生成的 ID
           setTasks((prev) => [...prev, {
             ...newTask,
-            displayId: taskData.displayId
+            displayId: newDisplayId
           }]);
           
           closeAddModal();
