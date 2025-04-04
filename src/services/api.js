@@ -142,8 +142,7 @@ export const tasksAPI = {
         hours: parseInt(taskData.hours, 10),
         details: taskData.details.trim(),
         status: taskData.status,
-        start_time: taskData.startTime || null,  // Ensure start_time is null instead of empty string
-        displayId: taskData.displayId
+        start_time: taskData.startTime || null  // Ensure start_time is null instead of empty string
       };
       
       // Remove undefined and empty string fields

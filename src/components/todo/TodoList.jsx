@@ -212,30 +212,6 @@ function TodoList() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
 
-  // 改进的 ID 生成策略：基于当前最大 ID 递增
-  const generateDisplayId = () => {
-    try {
-      // 从所有任务中获取最大的 ID
-      const existingIds = tasks.map(task => {
-        // 确保 displayId 是数字格式
-        const idStr = task.displayId || '0';
-        return parseInt(idStr.replace(/^#/, ''), 10);
-      });
-      
-      // 找出最大 ID，如果没有任务则从 0 开始
-      const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
-      
-      // 新 ID 为最大 ID + 1，并格式化为6位数字（前导零）
-      const newId = String(maxId + 1).padStart(6, '0');
-      
-      return newId;
-    } catch (error) {
-      console.error("ID generation error:", error);
-      // 如果出错，回退到时间戳策略
-      return String(Date.now()).slice(-6).padStart(6, '0');
-    }
-  };
-
   // Pagination related states
   const [pagination, setPagination] = useState({
     total: 0,
@@ -285,11 +261,11 @@ function TodoList() {
       const response = await tasksAPI.getAllTasks();
       console.log('Fetched task data:', response);
       
-      // 转换 API 返回的状态为显示状态
+      // 转换 API 返回的状态为显示状态，使用 _id 作为任务 ID
       const tasksWithDisplayStatus = response.tasks.map(task => ({
         ...task,
-        displayId: task.displayId || generateDisplayId(),
         status: mapApiToStatus(task.status)
+        // 不再设置 displayId
       }));
       
       setTasks(tasksWithDisplayStatus);
@@ -591,13 +567,10 @@ function TodoList() {
         
         setTasks((prev) => {
           return prev.map((t) => {
-            const taskId = t.id || t._id;
+            const taskId = t._id || t.id;
             if (taskId === editingTaskId) {
               return {
-                ...t,
-                ...updatedTask,
-                id: taskId,
-                displayId: t.displayId
+                ...updatedTask
               };
             }
             return t;
@@ -608,26 +581,19 @@ function TodoList() {
       } else {
         // Add mode
         try {
-          // 生成新的 ID
-          const newDisplayId = generateDisplayId();
-          
           const taskData = {
             priority: formData.priority || 'Medium',
             deadline: formData.deadline,
             hours: parseInt(formData.hours, 10) || 1,
             status: mapStatusToApi(formData.status),
             details: formData.details.trim(),
-            startTime: formData.startTime || null,
-            displayId: newDisplayId // 添加新生成的 ID
+            startTime: formData.startTime || null
           };
           
           const newTask = await tasksAPI.createTask(taskData);
           
-          // 确保新任务在本地状态中保持生成的 ID
-          setTasks((prev) => [...prev, {
-            ...newTask,
-            displayId: newDisplayId
-          }]);
+          // 直接使用后端返回的任务
+          setTasks((prev) => [...prev, newTask]);
           
           closeAddModal();
         } catch (err) {
@@ -813,9 +779,11 @@ function TodoList() {
       } 
       // Use special comparison for displayId to ensure numerical order
       else if (sortOptions.sortField === 'displayId') {
-        const aId = parseInt(a.displayId || 0);
-        const bId = parseInt(b.displayId || 0);
-        return sortOptions.sortDirection === 'asc' ? aId - bId : bId - aId;
+        const aId = a._id || a.id || '';
+        const bId = b._id || b.id || '';
+        return sortOptions.sortDirection === 'asc' 
+          ? aId.localeCompare(bId) 
+          : bId.localeCompare(aId);
       }
       // Use date comparison for date fields
       else if (sortOptions.sortField === 'deadline' || sortOptions.sortField === 'startTime') {
@@ -1045,7 +1013,7 @@ function TodoList() {
                 ) : (
                   <ul className="date-tasks-list">
                     {tasksBySelectedDate.map(task => (
-                      <li key={task.id || task._id} className="date-task-item" data-priority={task.priority.toLowerCase()}>
+                      <li key={task._id || task.id} className="date-task-item" data-priority={task.priority.toLowerCase()}>
                         <div className="date-task-details">
                           <span className="date-task-title">{task.details}</span>
                           <div className="date-task-badges">
@@ -1168,12 +1136,15 @@ function TodoList() {
                     <tbody>
                       {filteredAndSortedTasks.map((task) => {
                         const isInactive = task.status === 'Completed' || task.status === 'Expired';
+                        // 获取任务的 ID（可能是 _id 或 id，取决于后端返回）
+                        const taskId = task._id || task.id;
+                        
                         return (
                           <tr
-                            key={task.id}
+                            key={taskId}
                             className={`task-row task-row-${task.priority.toLowerCase()} ${isInactive ? 'task-row-inactive' : ''} fs-6`}
                           >
-                            <td className="text-center fw-bold">#{task.displayId || '0000'}</td>
+                            <td className="text-center fw-bold">#{formatDisplayId(taskId)}</td>
                             <td className="text-center">
                               <span className={`badge fs-6 ${task.priority === 'High' ? 'bg-danger' : task.priority === 'Medium' ? 'bg-warning text-dark' : 'bg-success'}`}>
                                 {task.priority}
@@ -1455,7 +1426,7 @@ function TodoList() {
                     <label className="form-label fw-bold">ID</label>
                     <input
                       type="text"
-                      value={`#${viewingTask.displayId || viewingTask.id}`}
+                      value={`#${formatDisplayId(viewingTask._id || viewingTask.id)}`}
                       className="form-control bg-light"
                       readOnly
                     />
@@ -1570,5 +1541,13 @@ function TodoList() {
     </div>
   );
 }
+
+// 添加一个处理 ID 显示的工具函数
+const formatDisplayId = (id) => {
+  if (!id) return '000000';
+  // 转换为字符串并获取最后6位
+  const idStr = String(id);
+  return idStr.slice(-6).padStart(6, '0');
+};
 
 export default TodoList; 
