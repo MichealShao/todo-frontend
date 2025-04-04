@@ -764,48 +764,70 @@ function TodoList() {
   const filteredAndSortedTasks = useMemo(() => {
     if (!tasks || tasks.length === 0) return [];
     
-    // 获取今天的日期字符串，用于比较
+    // Get today's date string for comparison
     const todayStr = getTodayDateString();
     
-    return [...tasks]
-      .map(task => {
-        const taskCopy = {...task};
-        
-        // Check if task is expired
-        if (task.status !== 'Completed') {
-          if (!task.deadline) return taskCopy;
-          
-          if (task.deadline < todayStr) {
-            taskCopy.status = 'Expired';
-          }
+    // First apply filters
+    let result = [...tasks];
+    
+    // Filter by search query
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(task => 
+        task.details.toLowerCase().includes(query) || 
+        (task.displayId && task.displayId.includes(query))
+      );
+    }
+    
+    // Filter by status
+    if (filters.status !== '') {
+      result = result.filter(task => task.status === filters.status);
+    }
+    
+    // Filter by priority
+    if (filters.priority !== '') {
+      result = result.filter(task => task.priority === filters.priority);
+    }
+    
+    // Then update status if expired
+    result = result.map(task => {
+      const taskCopy = {...task};
+      
+      // Check if task is expired
+      if (task.status !== 'Completed') {
+        if (task.deadline && task.deadline < todayStr) {
+          taskCopy.status = 'Expired';
         }
-        
-        return taskCopy;
-      })
-      .sort((a, b) => {
-        // First separate active and inactive tasks
-        const aIsInactive = a.status === 'Completed' || a.status === 'Expired';
-        const bIsInactive = b.status === 'Completed' || b.status === 'Expired';
-        
-        // Active tasks above inactive ones
-        if (aIsInactive && !bIsInactive) return 1;
-        if (!aIsInactive && bIsInactive) return -1;
-        
-        // For active tasks
-        if (!aIsInactive && !bIsInactive) {
-          // Sort by ID in descending order
-          return parseInt(b.displayId) - parseInt(a.displayId);
-        }
-        
-        // For inactive tasks (Expired or Completed)
-        if (aIsInactive && bIsInactive) {
-          // Sort by deadline in descending order
-          return b.deadline.localeCompare(a.deadline);
-        }
-        
-        return 0;
-      });
-  }, [tasks, sortOptions.sortField, sortOptions.sortDirection, searchQuery, filters]);
+      }
+      
+      return taskCopy;
+    });
+    
+    // Then sort
+    return result.sort((a, b) => {
+      // First separate active and inactive tasks
+      const aIsInactive = a.status === 'Completed' || a.status === 'Expired';
+      const bIsInactive = b.status === 'Completed' || b.status === 'Expired';
+      
+      // Active tasks above inactive ones
+      if (aIsInactive && !bIsInactive) return 1;
+      if (!aIsInactive && bIsInactive) return -1;
+      
+      // For active tasks
+      if (!aIsInactive && !bIsInactive) {
+        // Sort by ID in descending order
+        return parseInt(b.displayId) - parseInt(a.displayId);
+      }
+      
+      // For inactive tasks (Expired or Completed)
+      if (aIsInactive && bIsInactive) {
+        // Sort by deadline in descending order
+        return b.deadline?.localeCompare(a.deadline || '') || 0;
+      }
+      
+      return 0;
+    });
+  }, [tasks, sortOptions.sortField, sortOptions.sortDirection, searchQuery, filters.status, filters.priority]);
 
   // Calculate today's todo count after filteredAndSortedTasks memo
   const todayTodoCount = useMemo(() => {
