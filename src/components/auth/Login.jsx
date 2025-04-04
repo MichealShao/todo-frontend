@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../styles/Auth.css";
 import { authAPI } from "../../services/api";
 
 export const Login = () => {
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    email: localStorage.getItem('tempAuthEmail') || "",
+    password: localStorage.getItem('tempAuthPassword') || "",
     rememberMe: false
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -14,12 +14,22 @@ export const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    localStorage.removeItem('registrationSuccess');
+  }, []);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    
+    if (name === 'email') {
+      localStorage.setItem('tempAuthEmail', value);
+    } else if (name === 'password') {
+      localStorage.setItem('tempAuthPassword', value);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -29,19 +39,23 @@ export const Login = () => {
     
     try {
       await authAPI.login({ email: formData.email, password: formData.password });
+      
+      localStorage.removeItem('tempAuthEmail');
+      localStorage.removeItem('tempAuthPassword');
+      
       navigate('/todolist');
     } catch (err) {
       console.error('Login error:', err);
       setLoading(false);
       
       if (err.response && err.response.status === 401) {
-        setError('Username or password is incorrect. Please try again.');
+        setError('用户名或密码不正确，请重试。');
       } else if (err.response && err.response.status === 400) {
-        setError('Please enter a valid username and password.');
+        setError('请输入有效的用户名和密码。');
       } else if (err.message === 'Network Error') {
-        setError('Unable to connect to the server. Please check your internet connection.');
+        setError('无法连接到服务器，请检查您的网络连接。');
       } else {
-        setError('Unable to log in at this time. Please try again later.');
+        setError('登录暂时无法完成，请稍后再试。');
       }
     }
   };
@@ -50,15 +64,15 @@ export const Login = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1 className="auth-title">Login Account</h1>
-          <p className="auth-subtitle">Please enter your login information</p>
+          <h1 className="auth-title">登录账户</h1>
+          <p className="auth-subtitle">请输入您的登录信息</p>
         </div>
         
         {error && <div className="auth-error">{error}</div>}
         
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="email">Email</label>
+            <label className="form-label" htmlFor="email">邮箱</label>
             <div className="form-input-container">
               <input
                 id="email"
@@ -74,7 +88,7 @@ export const Login = () => {
           </div>
           
           <div className="form-group">
-            <label className="form-label" htmlFor="password">Password</label>
+            <label className="form-label" htmlFor="password">密码</label>
             <div className="form-input-container">
               <input
                 id="password"
@@ -91,7 +105,7 @@ export const Login = () => {
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? "隐藏" : "显示"}
               </button>
             </div>
           </div>
@@ -105,7 +119,7 @@ export const Login = () => {
               checked={formData.rememberMe}
               onChange={handleChange}
             />
-            <label htmlFor="remember">Remember me</label>
+            <label htmlFor="remember">记住我</label>
           </div>
           
           <button 
@@ -113,14 +127,14 @@ export const Login = () => {
             className="auth-button"
             disabled={loading}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? '登录中...' : '登录'}
           </button>
         </form>
         
         <div className="auth-footer">
-          Don't have an account?{" "}
+          还没有账户？{" "}
           <Link to="/signup" className="auth-link">
-            Register
+            注册
           </Link>
         </div>
       </div>

@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../styles/Auth.css";
 import { authAPI } from "../../services/api";
 
 export const SignUp = () => {
+  // 初始化时从 localStorage 获取保存的表单数据
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
-    password: "",
-    confirmPassword: ""
+    email: localStorage.getItem('tempAuthEmail') || "",
+    password: localStorage.getItem('tempAuthPassword') || "",
+    confirmPassword: localStorage.getItem('tempAuthPassword') || ""
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -28,9 +29,8 @@ export const SignUp = () => {
     e.preventDefault();
     setError(null);
     
- 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('两次输入的密码不一致');
       return;
     }
     
@@ -43,7 +43,14 @@ export const SignUp = () => {
         password: formData.password
       });
       
-    
+      // 注册成功后清除临时保存的数据
+      localStorage.removeItem('tempAuthEmail');
+      localStorage.removeItem('tempAuthPassword');
+      
+      // 设置注册成功标志
+      localStorage.setItem('registrationSuccess', 'true');
+      
+      // 尝试自动登录
       await authAPI.login({
         email: formData.email,
         password: formData.password
@@ -51,21 +58,21 @@ export const SignUp = () => {
       
       navigate('/todolist');
     } catch (err) {
-      console.error('Signup error:', err);
+      console.error('注册错误:', err);
       setLoading(false);
       
       if (err.response && err.response.data && err.response.data.message) {
         if (err.response.data.message.includes('duplicate')) {
-          setError('This username is already taken. Please choose another one.');
+          setError('此用户名已被占用。请选择另一个用户名。');
         } else if (err.response.data.message.includes('password')) {
-          setError('Password must be at least 6 characters long and include a mix of letters and numbers.');
+          setError('密码长度必须至少为6个字符，并包含字母和数字的组合。');
         } else {
           setError(err.response.data.message);
         }
       } else if (err.message === 'Network Error') {
-        setError('Unable to connect to the server. Please check your internet connection.');
+        setError('无法连接到服务器。请检查您的网络连接。');
       } else {
-        setError('Unable to create your account at this time. Please try again later.');
+        setError('暂时无法创建您的账户。请稍后再试。');
       }
     }
   };
@@ -74,22 +81,22 @@ export const SignUp = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1 className="auth-title">Create Account</h1>
-          <p className="auth-subtitle">Please fill in the information below to complete registration</p>
+          <h1 className="auth-title">创建账户</h1>
+          <p className="auth-subtitle">请填写以下信息完成注册</p>
         </div>
         
         {error && <div className="auth-error">{error}</div>}
         
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="name">Name</label>
+            <label className="form-label" htmlFor="name">姓名</label>
             <div className="form-input-container">
               <input
                 id="name"
                 type="text"
                 name="name"
                 className="form-input"
-                placeholder="Your name"
+                placeholder="您的姓名"
                 value={formData.name}
                 onChange={handleChange}
                 required
@@ -98,7 +105,7 @@ export const SignUp = () => {
           </div>
           
           <div className="form-group">
-            <label className="form-label" htmlFor="email">Email</label>
+            <label className="form-label" htmlFor="email">邮箱</label>
             <div className="form-input-container">
               <input
                 id="email"
@@ -114,7 +121,7 @@ export const SignUp = () => {
           </div>
           
           <div className="form-group">
-            <label className="form-label" htmlFor="password">Password</label>
+            <label className="form-label" htmlFor="password">密码</label>
             <div className="form-input-container">
               <input
                 id="password"
@@ -131,13 +138,13 @@ export const SignUp = () => {
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? "隐藏" : "显示"}
               </button>
             </div>
           </div>
           
           <div className="form-group">
-            <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
+            <label className="form-label" htmlFor="confirmPassword">确认密码</label>
             <div className="form-input-container">
               <input
                 id="confirmPassword"
@@ -154,7 +161,7 @@ export const SignUp = () => {
                 className="password-toggle"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               >
-                {showConfirmPassword ? "Hide" : "Show"}
+                {showConfirmPassword ? "隐藏" : "显示"}
               </button>
             </div>
           </div>
@@ -164,14 +171,14 @@ export const SignUp = () => {
             className="auth-button"
             disabled={loading}
           >
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? '注册中...' : '注册'}
           </button>
         </form>
         
         <div className="auth-footer">
-          Already have an account?{" "}
+          已有账户？{" "}
           <Link to="/" className="auth-link">
-            Log in now
+            立即登录
           </Link>
         </div>
       </div>
