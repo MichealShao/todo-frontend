@@ -346,18 +346,15 @@ function TodoList() {
   // 4. Sort switch
   // ---------------------------
   const sortBy = (field) => {
-    console.log(`Sorting by ${field}, current field: ${sortOptions.sortField}, direction: ${sortOptions.sortDirection}`);
-    
     if (sortOptions.sortField === field) {
-      // 如果已经按此字段排序，则切换排序方向
-      console.log(`Toggling direction for ${field}`);
+      // If already this field, loop switch: asc <-> desc
+      // Infinite loop switch sorting direction
       setSortOptions({
         sortField: field,
         sortDirection: sortOptions.sortDirection === "asc" ? "desc" : "asc"
       });
     } else {
-      // 新的排序字段，默认升序
-      console.log(`Setting new sort field: ${field}`);
+      // New field, sort from small to large (first click)
       setSortOptions({
         sortField: field,
         sortDirection: "asc"
@@ -1090,64 +1087,49 @@ function TodoList() {
                       <tr className="text-center fs-6">
                         <th className="text-center">ID</th>
                         <th 
-                          className="sortable text-center"
+                          className="sortable text-center" 
                           onClick={() => sortBy('priority')}
-                          style={{ cursor: 'pointer', background: sortOptions.sortField === 'priority' ? '#f8f9fa' : 'transparent' }}
                         >
                           Priority
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'priority' && (
-                              <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
-                            )}
-                          </span>
+                          {sortOptions.sortField === 'priority' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
+                          )}
                         </th>
                         <th 
-                          className="sortable text-center cursor-pointer"
+                          className="sortable text-center"
                           onClick={() => sortBy('status')}
-                          style={{ cursor: 'pointer', background: sortOptions.sortField === 'status' ? '#f8f9fa' : 'transparent' }}
                         >
                           Status
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'status' && (
-                              <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
-                            )}
-                          </span>
+                          {sortOptions.sortField === 'status' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
+                          )}
                         </th>
                         <th 
-                          className="sortable text-center cursor-pointer"
+                          className="sortable text-center"
                           onClick={() => sortBy('deadline')}
-                          style={{ cursor: 'pointer', background: sortOptions.sortField === 'deadline' ? '#f8f9fa' : 'transparent' }}
                         >
                           Due Date
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'deadline' && (
-                              <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
-                            )}
-                          </span>
+                          {sortOptions.sortField === 'deadline' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
+                          )}
                         </th>
                         <th 
-                          className="sortable text-center cursor-pointer"
+                          className="sortable text-center"
                           onClick={() => sortBy('startTime')}
-                          style={{ cursor: 'pointer', background: sortOptions.sortField === 'startTime' ? '#f8f9fa' : 'transparent' }}
                         >
-                          Start Date
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'startTime' && (
-                              <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
-                            )}
-                          </span>
+                          Started
+                          {sortOptions.sortField === 'startTime' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
+                          )}
                         </th>
                         <th 
-                          className="sortable text-center cursor-pointer"
+                          className="sortable text-center"
                           onClick={() => sortBy('hours')}
-                          style={{ cursor: 'pointer', background: sortOptions.sortField === 'hours' ? '#f8f9fa' : 'transparent' }}
                         >
-                          Estimate Hours
-                          <span className="ms-1">
-                            {sortOptions.sortField === 'hours' && (
-                              <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
-                            )}
-                          </span>
+                          Time Est.
+                          {sortOptions.sortField === 'hours' && (
+                            <i className={`fas fa-sort-${sortOptions.sortDirection}`}></i>
+                          )}
                         </th>
                         <th className="text-center">Description</th>
                         <th className="actions-header text-center">Actions</th>
