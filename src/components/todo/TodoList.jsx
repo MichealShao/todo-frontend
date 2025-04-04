@@ -1309,23 +1309,34 @@ function TodoList() {
                       Start Date {(formData.status === 'In Progress' || formData.status === 'Done') && 
                       <span className="text-danger">*</span>}
                     </label>
-                    <input
-                      type="date"
-                      className="form-control custom-date-input"
-                      id="updateStartTime"
-                      value={formData.startTime || ''}
-                      onChange={(e) => {
-                        const newStartTime = e.target.value;
-                        setFormData({ 
-                          ...formData, 
-                          startTime: newStartTime,
-                          // 如果新的 start date 晚于现有的 due date，清空 due date
-                          deadline: formData.deadline && newStartTime > formData.deadline ? '' : formData.deadline
-                        });
-                      }}
-                      required={formData.status === 'In Progress' || formData.status === 'Done'}
-                      max={formData.deadline || undefined} // 限制 start date 不能晚于 due date
-                    />
+                    <div className="position-relative">
+                      <input
+                        type="date"
+                        className="form-control custom-date-input"
+                        id="updateStartTime"
+                        value={formData.startTime || ''}
+                        onChange={(e) => {
+                          const newStartTime = e.target.value;
+                          setFormData({ 
+                            ...formData, 
+                            startTime: newStartTime,
+                            deadline: formData.deadline && newStartTime > formData.deadline ? '' : formData.deadline
+                          });
+                        }}
+                        required={formData.status === 'In Progress' || formData.status === 'Done'}
+                        max={formData.deadline || undefined}
+                        lang="en"
+                      />
+                      {formData.startTime && (
+                        <div className="date-display position-absolute">
+                          {new Date(formData.startTime).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long', 
+                            day: 'numeric'
+                          })}
+                        </div>
+                      )}
+                    </div>
                     {(formData.status === 'In Progress' || formData.status === 'Done') && (
                       <small className="text-muted">
                         Required for In Progress and Done tasks
@@ -1345,8 +1356,9 @@ function TodoList() {
                         const newDeadline = e.target.value;
                         setFormData({ ...formData, deadline: newDeadline });
                       }}
-                      min={formData.startTime || getTodayDateString()} // 限制 due date 不能早于 start date 或今天
+                      min={formData.startTime || getTodayDateString()}
                       required
+                      lang="en"
                     />
                   </div>
                   <div className="mb-3">
