@@ -350,6 +350,7 @@ function TodoList() {
       sortField: field,
       sortDirection: sortOptions.sortField === field && sortOptions.sortDirection === "asc" ? "desc" : "asc"
     });
+    console.log(`Sorting by ${field}, direction: ${sortOptions.sortField === field && sortOptions.sortDirection === "asc" ? "desc" : "asc"}`);
   };
 
   // Reset sorting and filtering
@@ -803,30 +804,37 @@ function TodoList() {
       if (aIsInactive && !bIsInactive) return 1;
       if (!aIsInactive && bIsInactive) return -1;
       
-      // If both are active or both are inactive
-      if (sortOptions.sortField !== 'displayId') {
-        // Custom sorting based on selected field
-        const aValue = a[sortOptions.sortField];
-        const bValue = b[sortOptions.sortField];
-        
-        // Handle null values
-        if (!aValue && !bValue) return 0;
-        if (!aValue) return sortOptions.sortDirection === 'asc' ? 1 : -1;
-        if (!bValue) return sortOptions.sortDirection === 'asc' ? -1 : 1;
-        
-        // Compare values based on sort direction
-        if (sortOptions.sortDirection === 'asc') {
-          return aValue.toString().localeCompare(bValue.toString());
-        } else {
-          return bValue.toString().localeCompare(aValue.toString());
-        }
-      } else {
-        // Default sort by ID descending (larger IDs at top)
-        if (sortOptions.sortDirection === 'asc') {
-          return parseInt(a.displayId) - parseInt(b.displayId);
-        } else {
-          return parseInt(b.displayId) - parseInt(a.displayId);
-        }
+      // If both are active or both are inactive, apply the selected sorting
+      // Use numerical comparison for numeric fields
+      if (sortOptions.sortField === 'hours') {
+        const aHours = parseInt(a.hours || 0);
+        const bHours = parseInt(b.hours || 0);
+        return sortOptions.sortDirection === 'asc' ? aHours - bHours : bHours - aHours;
+      } 
+      // Use special comparison for displayId to ensure numerical order
+      else if (sortOptions.sortField === 'displayId') {
+        const aId = parseInt(a.displayId || 0);
+        const bId = parseInt(b.displayId || 0);
+        return sortOptions.sortDirection === 'asc' ? aId - bId : bId - aId;
+      }
+      // Use date comparison for date fields
+      else if (sortOptions.sortField === 'deadline' || sortOptions.sortField === 'startTime') {
+        const aDate = a[sortOptions.sortField] || '';
+        const bDate = b[sortOptions.sortField] || '';
+        if (!aDate && !bDate) return 0;
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return sortOptions.sortDirection === 'asc' 
+          ? aDate.localeCompare(bDate) 
+          : bDate.localeCompare(aDate);
+      }
+      // Use string comparison for other fields
+      else {
+        const aValue = a[sortOptions.sortField] || '';
+        const bValue = b[sortOptions.sortField] || '';
+        return sortOptions.sortDirection === 'asc' 
+          ? aValue.toString().localeCompare(bValue.toString()) 
+          : bValue.toString().localeCompare(aValue.toString());
       }
     });
   }, [tasks, sortOptions.sortField, sortOptions.sortDirection, searchQuery, filters.status, filters.priority]);
@@ -1091,65 +1099,100 @@ function TodoList() {
                         <th 
                           className="text-center sortable" 
                           onClick={() => sortBy('displayId')}
+                          style={{ cursor: 'pointer' }}
                         >
                           ID
-                          {sortOptions.sortField === 'displayId' && (
-                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
-                          )}
+                          <span className="ms-1">
+                            {sortOptions.sortField === 'displayId' && (
+                              sortOptions.sortDirection === 'asc' 
+                                ? <i className="fas fa-arrow-up text-primary"></i> 
+                                : <i className="fas fa-arrow-down text-primary"></i>
+                            )}
+                          </span>
                         </th>
                         <th 
                           className="sortable text-center" 
                           onClick={() => sortBy('priority')}
+                          style={{ cursor: 'pointer' }}
                         >
                           Priority
-                          {sortOptions.sortField === 'priority' && (
-                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
-                          )}
+                          <span className="ms-1">
+                            {sortOptions.sortField === 'priority' && (
+                              sortOptions.sortDirection === 'asc' 
+                                ? <i className="fas fa-arrow-up text-primary"></i> 
+                                : <i className="fas fa-arrow-down text-primary"></i>
+                            )}
+                          </span>
                         </th>
                         <th 
                           className="sortable text-center" 
                           onClick={() => sortBy('status')}
+                          style={{ cursor: 'pointer' }}
                         >
                           Status
-                          {sortOptions.sortField === 'status' && (
-                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
-                          )}
+                          <span className="ms-1">
+                            {sortOptions.sortField === 'status' && (
+                              sortOptions.sortDirection === 'asc' 
+                                ? <i className="fas fa-arrow-up text-primary"></i> 
+                                : <i className="fas fa-arrow-down text-primary"></i>
+                            )}
+                          </span>
                         </th>
                         <th 
                           className="sortable text-center" 
                           onClick={() => sortBy('deadline')}
+                          style={{ cursor: 'pointer' }}
                         >
                           Due Date
-                          {sortOptions.sortField === 'deadline' && (
-                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
-                          )}
+                          <span className="ms-1">
+                            {sortOptions.sortField === 'deadline' && (
+                              sortOptions.sortDirection === 'asc' 
+                                ? <i className="fas fa-arrow-up text-primary"></i> 
+                                : <i className="fas fa-arrow-down text-primary"></i>
+                            )}
+                          </span>
                         </th>
                         <th 
                           className="sortable text-center" 
                           onClick={() => sortBy('startTime')}
+                          style={{ cursor: 'pointer' }}
                         >
                           Started
-                          {sortOptions.sortField === 'startTime' && (
-                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
-                          )}
+                          <span className="ms-1">
+                            {sortOptions.sortField === 'startTime' && (
+                              sortOptions.sortDirection === 'asc' 
+                                ? <i className="fas fa-arrow-up text-primary"></i> 
+                                : <i className="fas fa-arrow-down text-primary"></i>
+                            )}
+                          </span>
                         </th>
                         <th 
                           className="sortable text-center" 
                           onClick={() => sortBy('hours')}
+                          style={{ cursor: 'pointer' }}
                         >
                           Time Est.
-                          {sortOptions.sortField === 'hours' && (
-                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
-                          )}
+                          <span className="ms-1">
+                            {sortOptions.sortField === 'hours' && (
+                              sortOptions.sortDirection === 'asc' 
+                                ? <i className="fas fa-arrow-up text-primary"></i> 
+                                : <i className="fas fa-arrow-down text-primary"></i>
+                            )}
+                          </span>
                         </th>
                         <th 
                           className="sortable text-center" 
                           onClick={() => sortBy('details')}
+                          style={{ cursor: 'pointer' }}
                         >
                           Description
-                          {sortOptions.sortField === 'details' && (
-                            <i className={`fas fa-sort-${sortOptions.sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
-                          )}
+                          <span className="ms-1">
+                            {sortOptions.sortField === 'details' && (
+                              sortOptions.sortDirection === 'asc' 
+                                ? <i className="fas fa-arrow-up text-primary"></i> 
+                                : <i className="fas fa-arrow-down text-primary"></i>
+                            )}
+                          </span>
                         </th>
                         <th className="actions-header text-center">Actions</th>
                       </tr>
