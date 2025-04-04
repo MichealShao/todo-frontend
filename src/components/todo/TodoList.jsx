@@ -1096,17 +1096,8 @@ function TodoList() {
                   <table className="table table-hover align-middle">
                     <thead>
                       <tr className="text-center fs-6">
-                        <th 
-                          className="text-center sortable" 
-                          onClick={() => sortBy('displayId')}
-                          style={{ cursor: 'pointer' }}
-                        >
+                        <th className="text-center">
                           ID
-                          <i className={`ms-2 fas ${
-                            sortOptions.sortField === 'displayId' 
-                              ? `fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-primary` 
-                              : 'fa-sort text-secondary'
-                          }`}></i>
                         </th>
                         <th 
                           className="sortable text-center" 
@@ -1168,17 +1159,8 @@ function TodoList() {
                               : 'fa-sort text-secondary'
                           }`}></i>
                         </th>
-                        <th 
-                          className="sortable text-center" 
-                          onClick={() => sortBy('details')}
-                          style={{ cursor: 'pointer' }}
-                        >
+                        <th className="text-center">
                           Description
-                          <i className={`ms-2 fas ${
-                            sortOptions.sortField === 'details' 
-                              ? `fa-sort-${sortOptions.sortDirection === 'asc' ? 'down' : 'up'} text-primary` 
-                              : 'fa-sort text-secondary'
-                          }`}></i>
                         </th>
                         <th className="actions-header text-center">Actions</th>
                       </tr>
